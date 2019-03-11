@@ -1,0 +1,1 @@
+{"type":"urn:ietf:params:jmap:error:notRequest","title":"JSON request body is not a JMAP Request object","status":400}

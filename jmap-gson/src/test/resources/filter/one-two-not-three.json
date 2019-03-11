@@ -1,0 +1,1 @@
+{"operator":"AND","conditions":[{"operator":"NOT","conditions":[{"text":"three"}]},{"text":"one"},{"text":"two"}]}
