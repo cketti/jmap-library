@@ -133,7 +133,6 @@ public class Mua {
             public void run() {
                 try {
                     final GetIdentityMethodResponse response = responseFuture.get().getMain(GetIdentityMethodResponse.class);
-                    System.out.println(response.toString());
                     final Identity[] identities = response.getList();
                     cache.setIdentities(jmapClient.getUsername(), response.getState(), identities);
                     settableFuture.set(Status.of(identities.length > 0));
@@ -253,6 +252,13 @@ public class Mua {
         return settableFuture;
     }
 
+    /**
+     * Stores an email as a draft. This method will take care of adding the draft and seen keyword and moving the email
+     * to the draft mailbox.
+     *
+     * @param email  The email that should be saved as a draft
+     * @return
+     */
     public ListenableFuture<Boolean> draft(final Email email) {
         return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<Mailbox>, Boolean>() {
             @Override
@@ -272,8 +278,8 @@ public class Mua {
     }
 
     /**
-     * Stores an email as a draft. This method will take care of adding the draft keyword and moving the email to the draft
-     * mailbox.
+     * Stores an email as a draft. This method will take care of adding the draft and seen keyword and moving the email
+     * to the draft mailbox.
      *
      * @param email  The email that should be saved as a draft
      * @param drafts A reference to the Drafts mailbox. Can be null and a new Draft mailbox will automatically be created.
@@ -303,6 +309,9 @@ public class Mua {
         if (!email.getKeywords().containsKey(Keyword.DRAFT)) {
             emailBuilder.keyword(Keyword.DRAFT, true);
         }
+        if (!email.getKeywords().containsKey(Keyword.SEEN)) {
+            emailBuilder.keyword(Keyword.SEEN, true);
+        }
         final ListenableFuture<MethodResponses> future = multiCall.call(new SetEmailMethodCall(ImmutableMap.of("e0", emailBuilder.build())));
         return Futures.transformAsync(future, new AsyncFunction<MethodResponses, Boolean>() {
             @Override
@@ -313,7 +322,6 @@ public class Mua {
                 }
                 SetEmailMethodResponse setEmailMethodResponse = methodResponses.getMain(SetEmailMethodResponse.class);
                 SetEmailException.throwIfFailed(setEmailMethodResponse);
-                System.err.println(setEmailMethodResponse);
                 return Futures.immediateFuture(setEmailMethodResponse.getUpdatedCreatedCount() > 0);
             }
         }, MoreExecutors.directExecutor());
@@ -413,8 +421,6 @@ public class Mua {
                 }
                 SetEmailSubmissionMethodResponse setEmailSubmissionMethodResponse = methodResponses.getMain(SetEmailSubmissionMethodResponse.class);
                 SetEmailSubmissionException.throwIfFailed(setEmailSubmissionMethodResponse);
-                System.err.println(setEmailSubmissionMethodResponse);
-                System.err.println("additional " + methodResponses.getAdditional().length);
                 return Futures.immediateFuture(setEmailSubmissionMethodResponse.getUpdatedCreatedCount() > 0);
             }
         }, MoreExecutors.directExecutor());

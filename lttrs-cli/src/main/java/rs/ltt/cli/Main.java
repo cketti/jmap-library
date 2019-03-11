@@ -29,6 +29,8 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.TerminalResizeListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rs.ltt.cli.cache.MyInMemoryCache;
 import rs.ltt.cli.model.QueryViewItem;
 import rs.ltt.jmap.client.api.UnauthorizedException;
@@ -46,6 +48,8 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 public class Main {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm");
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MMM dd");
@@ -87,12 +91,8 @@ public class Main {
                         loadingMessage(screen, "Loading mailboxes…");
                         mua.refreshMailboxes().get();
                         inbox = MailboxUtils.find(myInMemoryCache.getMailboxes(), Role.INBOX);
-                        for (Mailbox mb : myInMemoryCache.getMailboxes()) {
-                            System.err.println(mb);
-                        }
                         loadingMessage(screen, "Loading identities…");
-                        System.err.println(mua.refreshIdentities().get());
-                        System.err.println(myInMemoryCache.getIdentities());
+                        mua.refreshIdentities().get();
                     } catch (Exception e) {
                         if (e instanceof ExecutionException) {
                             Throwable cause = e.getCause();
@@ -101,7 +101,7 @@ public class Main {
                                 return;
                             }
                         }
-                        System.err.println(e.getMessage());
+                        loadingMessage(screen, e.getMessage());
                         return;
                     }
                     if (inbox == null) {
@@ -237,15 +237,18 @@ public class Main {
 
     private static void send(Mua mua) {
         QueryViewItem item = items.get(cursorPosition);
+        if (!item.mostRecent.getKeywords().containsKey(Keyword.DRAFT)) {
+            return;
+        }
         Identity identity = Iterables.getFirst(myInMemoryCache.getIdentities(), null);
         if (identity != null) {
             try {
-                System.err.println(mua.submit(item.mostRecent, identity).get());
+                LOGGER.info("submitted email: "+mua.submit(item.mostRecent, identity).get());
             } catch (Exception e) {
                 e.printStackTrace();
             }
         } else {
-            System.err.println("no identity found");
+            LOGGER.error("no identity found");
         }
 
     }
@@ -280,15 +283,15 @@ public class Main {
             future = mua.draft(email);
         }
         try {
-            System.err.println("success=" + future.get());
+            future.get();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof SetEmailException) {
-                System.err.println(cause);
+                LOGGER.error(cause.toString());
             } else {
-                e.printStackTrace();
+                LOGGER.error(e.getMessage(), e);
             }
         }
     }
@@ -319,7 +322,7 @@ public class Main {
         try {
             screen.refresh();
         } catch (IOException e) {
-            System.err.println(e.getMessage());
+            LOGGER.error("unable to refresh screen after printing loading message", e);
         }
     }
 
@@ -353,9 +356,9 @@ public class Main {
             if (draft) {
                 sgr = SGR.ITALIC;
             } else if (seen) {
-                sgr = SGR.BOLD;
-            } else {
                 sgr = null;
+            } else {
+                sgr = SGR.BOLD;
             }
             final boolean flagged = item.mostRecent.getKeywords().containsKey(Keyword.FLAGGED);
             boolean selected = i == cursorPosition;

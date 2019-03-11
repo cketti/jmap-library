@@ -223,7 +223,9 @@ public class InMemoryCache implements Cache {
             for(Identity identity : identities) {
                 this.identities.put(identity.getId(), identity);
             }
-            System.err.println("setting identity state to="+state);
+            if (state == null) {
+                LOGGER.warn("Identity state was null");
+            }
             this.identityState = state;
         }
 
