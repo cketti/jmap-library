@@ -32,6 +32,50 @@ GSON serializer and deserializer to convert the POJOs from `jmap-common` into JM
 
 A JMAP client library to make JMAP method calls and process the responses. It handles multiples calls in one request (including back references) and multiple method responses per call. Currently it only supports requests over HTTP but it has been designed with the possibility in mind to eventually support requests over WebSockets.
 
+#### A simple example fetching mailboxes
+
+```java
+JmapClient client = new JmapClient("user@example.com", "password");
+
+Future<MethodResponses> future = client.call(new GetMailboxMethodCall());
+
+GetMailboxMethodResponse mailboxMethodResponse = future.get().getMain(GetMailboxMethodResponse.class);
+
+for(Mailbox mailbox : mailboxMethodResponse.getList()) {
+    System.out.println(mailbox.getName());
+}
+```
+
+#### Multiple method calls in the same request
+
+```java
+JmapClient client = new JmapClient("user@example.com", "password");
+
+JmapClient.MultiCall multiCall = client.newMultiCall();
+
+//create a query request
+Request.Invocation emailQuery = Request.Invocation.create(
+    new QueryEmailMethodCall(EmailQuery.unfiltered())
+);
+//create a get email request with a back reference to the IDs found in the previous request
+Request.Invocation emailGet = Request.Invocation.create(
+    new GetEmailMethodCall(emailQuery.createReference(Request.Invocation.ResultReference.Path.IDS))
+);
+
+//add both method calls to multi call
+Future<MethodResponses> emailQueryResponseFuture = multiCall.add(emailQuery);
+Future<MethodResponses> emailGetResponseFuture = multiCall.add(emailGet);
+
+multiCall.execute();
+
+//process responses
+QueryEmailMethodResponse emailQueryResponse = emailQueryResponseFuture.get().getMain(QueryEmailMethodResponse.class);
+GetEmailMethodResponse getEmailMethodResponse = emailGetResponseFuture.get().getMain(GetEmailMethodResponse.class);
+for (Email email : getEmailMethodResponse.getList()) {
+    System.out.println(email.getSentAt() + " " + email.getFrom() + " " + email.getSubject());
+}
+```
+
 ### jmap-mua
 
 A high level API to act as an email client. It handles everything an email client is supposed to handle minus storage backend and GUI. The storage (caching) backend is accessed via an interface that different email clients on different plattforms can implement. It comes with a reference in-memory implementation of that interface. `jmap-mua` only ever *writes* to that storage backend. Accessing data in that storage backend and displaying it in a GUI is up to the specfic email client.
