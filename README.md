@@ -1,6 +1,6 @@
 # Java JMAP library
 
-A library to synchronize data between a JMAP server and a JMAP client. The current focus is on acting as a client library to retrieve emails from a server however it is easily extensible to also synchronize contacts and calendars. It might even be extented to act as a server library.
+A library to synchronize data between a client and a server using the JSON Meta Application Protocol. The current focus is on acting as a client library to retrieve emails from a server however it is easily extensible to also synchronize contacts and calendars. It might even be extented to act as a server library.
 
 The library is written in Java 7 to provide full compatibilty with Android. It uses [GSON](https://github.com/google/gson) for JSON serialization and deserialization and makes heavy use of [Guava](https://github.com/google/guava) including its Futures. 
 
@@ -14,7 +14,7 @@ The library is devided into seperate modules.
 
 ### jmap-annotation
 
-Each JMAP request and response is a POJO annotated with `@JmapMethod`. An annotation processor collects a lists of all available JMAP Methods. This modules holds these annotations and annotation processors.
+Each JMAP method call and response is a POJO annotated with `@JmapMethod`. An annotation processor collects a lists of all available JMAP Methods. This modules holds these annotations and annotation processors.
 
 ### jmap-common
 
@@ -39,4 +39,5 @@ A high level API to act as an email client. It handles everything an email clien
 ### lttrs-cli
 
 A very, very rudimentary implementation of a TUI email client that uses `jmap-mua`. It mostly exists for development purposes and to quickly test new features in `jmap-mua`. Code quality (especially in regards to the TUI) is currently prettly low.
+
 ![screenshots of lttrs-cli](https://gultsch.de/files/lttrs-cli.png)
