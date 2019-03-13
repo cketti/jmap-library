@@ -63,14 +63,14 @@ Request.Invocation emailGet = Request.Invocation.create(
 );
 
 //add both method calls to multi call
-Future<MethodResponses> emailQueryResponseFuture = multiCall.add(emailQuery);
-Future<MethodResponses> emailGetResponseFuture = multiCall.add(emailGet);
+Future<MethodResponses> queryFuture = multiCall.add(emailQuery);
+Future<MethodResponses> getFuture = multiCall.add(emailGet);
 
 multiCall.execute();
 
 //process responses
-QueryEmailMethodResponse emailQueryResponse = emailQueryResponseFuture.get().getMain(QueryEmailMethodResponse.class);
-GetEmailMethodResponse getEmailMethodResponse = emailGetResponseFuture.get().getMain(GetEmailMethodResponse.class);
+QueryEmailMethodResponse emailQueryResponse = queryFuture.get().getMain(QueryEmailMethodResponse.class);
+GetEmailMethodResponse getEmailMethodResponse = getFuture.get().getMain(GetEmailMethodResponse.class);
 for (Email email : getEmailMethodResponse.getList()) {
     System.out.println(email.getSentAt() + " " + email.getFrom() + " " + email.getSubject());
 }
