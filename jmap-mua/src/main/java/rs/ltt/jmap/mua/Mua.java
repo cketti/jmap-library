@@ -240,7 +240,7 @@ public class Mua {
                 try {
                     final ChangesMailboxMethodResponse changesResponse = methodResponsesFuture.changes.get().getMain(ChangesMailboxMethodResponse.class);
                     final GetMailboxMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetMailboxMethodResponse.class);
-                    final GetMailboxMethodResponse updatedResponse = methodResponsesFuture.created.get().getMain(GetMailboxMethodResponse.class);
+                    final GetMailboxMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetMailboxMethodResponse.class);
                     final Update<Mailbox> update = Update.of(changesResponse, createdResponse, updatedResponse);
                     cache.updateMailboxes(jmapClient.getUsername(), update, changesResponse.getUpdatedProperties());
                     settableFuture.set(Status.of(update));
