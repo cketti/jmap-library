@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
 import rs.ltt.jmap.client.JmapClient;
 import rs.ltt.jmap.client.MethodResponses;
-import rs.ltt.jmap.common.entity.Mailbox;
+import rs.ltt.jmap.common.entity.IdentifiableSpecialMailbox;
 import rs.ltt.jmap.common.entity.Role;
 import rs.ltt.jmap.common.method.call.mailbox.SetMailboxMethodCall;
 
@@ -30,7 +30,7 @@ import java.util.Locale;
 
 public class CreateUtil {
 
-    public static Optional<ListenableFuture<MethodResponses>> mailbox(final JmapClient.MultiCall multiCall, final Mailbox mailbox, final Role role) {
+    public static Optional<ListenableFuture<MethodResponses>> mailbox(final JmapClient.MultiCall multiCall, final IdentifiableSpecialMailbox mailbox, final Role role) {
         if (mailbox != null) {
             Preconditions.checkArgument(mailbox.getRole() == role);
         }

@@ -83,6 +83,7 @@ public class InMemoryCache implements Cache {
 
     @Override
     public void updateMailboxes(String account, Update<Mailbox> mailboxUpdate, final String[] updatedProperties) throws CacheWriteException {
+        System.err.println("update "+mailboxUpdate);
         synchronized (this.mailboxes) {
             for (Mailbox mailbox : mailboxUpdate.getCreated()) {
                 this.mailboxes.put(mailbox.getId(), mailbox);
@@ -112,7 +113,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public Collection<Mailbox> getMailboxes(String account) throws NotSynchronizedException {
+    public Collection<Mailbox> getSpecialMailboxes(String account) throws NotSynchronizedException {
         synchronized (this.mailboxes) {
             if (this.mailboxState == null) {
                 throw new NotSynchronizedException("Mailboxes have not been synchronized yet. Run refresh() first.");

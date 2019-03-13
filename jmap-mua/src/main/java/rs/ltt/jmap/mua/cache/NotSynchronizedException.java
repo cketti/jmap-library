@@ -17,7 +17,7 @@
 package rs.ltt.jmap.mua.cache;
 
 public class NotSynchronizedException extends Exception {
-    NotSynchronizedException(String message) {
+    public NotSynchronizedException(String message) {
         super(message);
     }
 }

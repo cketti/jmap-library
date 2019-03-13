@@ -18,11 +18,11 @@ package rs.ltt.jmap.mua.cache;
 
 public class CacheReadException extends Exception {
 
-    CacheReadException(String message, Throwable throwable) {
+    public CacheReadException(String message, Throwable throwable) {
         super(message, throwable);
     }
 
-    CacheReadException(String message) {
+    public CacheReadException(String message) {
         super(message);
     }
 }

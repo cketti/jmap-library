@@ -86,7 +86,7 @@ public class Main {
             final Thread refreshThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    final Mailbox inbox;
+                    final IdentifiableSpecialMailbox inbox;
                     try {
                         loadingMessage(screen, "Loading mailboxes…");
                         mua.refreshMailboxes().get();
@@ -120,7 +120,7 @@ public class Main {
                                 redrawCurrentList(screen);
                             }
                             try {
-                                Thread.sleep(800);
+                                Thread.sleep(2000);
                             } catch (InterruptedException e) {
                                 //goodbye
                             }
@@ -303,10 +303,9 @@ public class Main {
 
     private static void archive(Mua mua) {
         QueryViewItem item = items.get(cursorPosition);
-        Mailbox archive = MailboxUtils.find(myInMemoryCache.getMailboxes(), Role.ARCHIVE);
-        Mailbox inbox = MailboxUtils.find(myInMemoryCache.getMailboxes(), Role.INBOX);
+        IdentifiableSpecialMailbox inbox = MailboxUtils.find(myInMemoryCache.getMailboxes(), Role.INBOX);
         try {
-            mua.removeFromMailbox(myInMemoryCache.getEmails(item.threadId), inbox, archive).get();
+            mua.removeFromMailbox(myInMemoryCache.getEmails(item.threadId), inbox.getId()).get();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {

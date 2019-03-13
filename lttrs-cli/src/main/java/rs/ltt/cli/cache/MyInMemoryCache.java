@@ -62,7 +62,7 @@ public class MyInMemoryCache extends InMemoryCache {
 
     public Collection<Mailbox> getMailboxes() {
         try {
-            return this.getMailboxes(null);
+            return this.getSpecialMailboxes(null);
         } catch (NotSynchronizedException e) {
             return Collections.emptyList();
         }

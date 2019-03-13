@@ -18,11 +18,15 @@ package rs.ltt.jmap.mua.cache;
 
 public class CacheWriteException extends Exception {
 
-    CacheWriteException(String message, Throwable throwable) {
+    public CacheWriteException(Throwable throwable) {
+        super(throwable);
+    }
+
+    public CacheWriteException(String message, Throwable throwable) {
         super(message, throwable);
     }
 
-    CacheWriteException(String message) {
+    public CacheWriteException(String message) {
         super(message);
     }
 }

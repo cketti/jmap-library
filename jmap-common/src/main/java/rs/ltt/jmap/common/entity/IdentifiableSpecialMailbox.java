@@ -14,10 +14,9 @@
  *
  */
 
-package rs.ltt.jmap.mua.cache;
+package rs.ltt.jmap.common.entity;
 
-public class CacheConflictException extends IllegalStateException {
-    public CacheConflictException(String message) {
-        super(message);
-    }
+public interface IdentifiableSpecialMailbox {
+    String getId();
+    Role getRole();
 }

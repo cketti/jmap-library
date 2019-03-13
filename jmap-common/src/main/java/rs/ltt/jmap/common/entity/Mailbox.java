@@ -22,7 +22,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class Mailbox extends AbstractIdentifiableEntity {
+public class Mailbox extends AbstractIdentifiableEntity implements IdentifiableSpecialMailbox {
 
     private String name;
 
@@ -41,7 +41,6 @@ public class Mailbox extends AbstractIdentifiableEntity {
     private Integer unreadThreads;
 
     private MailboxRights myRights;
-
 
     private Boolean isSubscribed;
 

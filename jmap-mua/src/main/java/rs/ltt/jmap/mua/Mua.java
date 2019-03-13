@@ -221,7 +221,7 @@ public class Mua {
                     Mailbox[] mailboxes = response.getList();
                     cache.setMailboxes(jmapClient.getUsername(), response.getState(), mailboxes);
                     settableFuture.set(Status.of(mailboxes.length > 0));
-                } catch (InterruptedException | ExecutionException e) {
+                } catch (InterruptedException | ExecutionException | CacheWriteException e) {
                     settableFuture.setException(extractException(e));
                 }
 
@@ -244,7 +244,7 @@ public class Mua {
                     final Update<Mailbox> update = Update.of(changesResponse, createdResponse, updatedResponse);
                     cache.updateMailboxes(jmapClient.getUsername(), update, changesResponse.getUpdatedProperties());
                     settableFuture.set(Status.of(update));
-                } catch (InterruptedException | ExecutionException | CacheWriteException e) {
+                } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
                     settableFuture.setException(extractException(e));
                 }
             }
@@ -260,19 +260,19 @@ public class Mua {
      * @return
      */
     public ListenableFuture<Boolean> draft(final Email email) {
-        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<Mailbox>, Boolean>() {
+        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
             @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl Collection<Mailbox> mailboxes) {
+            public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) {
                 return draft(email, MailboxUtils.find(mailboxes, Role.DRAFTS));
             }
         }, MoreExecutors.directExecutor());
     }
 
-    private ListenableFuture<Collection<Mailbox>> getMailboxes() {
-        return ioExecutorService.submit(new Callable<Collection<Mailbox>>() {
+    private ListenableFuture<Collection<? extends IdentifiableSpecialMailbox>> getMailboxes() {
+        return ioExecutorService.submit(new Callable<Collection<? extends IdentifiableSpecialMailbox>>() {
             @Override
-            public Collection<Mailbox> call() throws Exception {
-                return cache.getMailboxes(jmapClient.getUsername());
+            public Collection<? extends IdentifiableSpecialMailbox> call() throws Exception {
+                return cache.getSpecialMailboxes(jmapClient.getUsername());
             }
         });
     }
@@ -287,14 +287,14 @@ public class Mua {
      *               and fail.
      * @return
      */
-    public ListenableFuture<Boolean> draft(final Email email, final Mailbox drafts) {
+    public ListenableFuture<Boolean> draft(final Email email, final IdentifiableSpecialMailbox drafts) {
         final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
         final ListenableFuture<Boolean> future = draft(email, drafts, multiCall);
         multiCall.execute();
         return future;
     }
 
-    private ListenableFuture<Boolean> draft(final Email email, final Mailbox drafts, final JmapClient.MultiCall multiCall) {
+    private ListenableFuture<Boolean> draft(final Email email, final IdentifiableSpecialMailbox drafts, final JmapClient.MultiCall multiCall) {
         Preconditions.checkNotNull(email);
         Preconditions.checkState(email.getId() == null, "id is a server-set property");
         Preconditions.checkState(email.getBlobId() == null, "blobId is a server-set property");
@@ -329,18 +329,18 @@ public class Mua {
     }
 
     public ListenableFuture<Boolean> submit(final Email email, final Identity identity) {
-        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<Mailbox>, Boolean>() {
+        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
             @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl Collection<Mailbox> mailboxes) {
+            public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) {
                 Preconditions.checkNotNull(mailboxes);
-                final Mailbox drafts = MailboxUtils.find(mailboxes, Role.DRAFTS);
+                final IdentifiableSpecialMailbox drafts = MailboxUtils.find(mailboxes, Role.DRAFTS);
                 final String draftMailboxId;
                 if (drafts == null || !email.getMailboxIds().containsKey(drafts.getId())) {
                     draftMailboxId = null;
                 } else {
                     draftMailboxId = drafts.getId();
                 }
-                final Mailbox sent = MailboxUtils.find(mailboxes, Role.SENT);
+                final IdentifiableSpecialMailbox sent = MailboxUtils.find(mailboxes, Role.SENT);
                 return submit(email.getId(), identity, draftMailboxId, sent);
             }
         }, MoreExecutors.directExecutor());
@@ -355,12 +355,12 @@ public class Mua {
      * @return
      */
     public ListenableFuture<Boolean> submit(final String emailId, final Identity identity) {
-        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<Mailbox>, Boolean>() {
+        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
             @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl Collection<Mailbox> mailboxes) {
+            public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) {
                 Preconditions.checkNotNull(mailboxes);
-                final Mailbox drafts = MailboxUtils.find(mailboxes, Role.DRAFTS);
-                final Mailbox sent = MailboxUtils.find(mailboxes, Role.SENT);
+                final IdentifiableSpecialMailbox drafts = MailboxUtils.find(mailboxes, Role.DRAFTS);
+                final IdentifiableSpecialMailbox sent = MailboxUtils.find(mailboxes, Role.SENT);
                 return submit(emailId, identity, drafts == null ? null : drafts.getId(), sent);
             }
         }, MoreExecutors.directExecutor());
@@ -381,7 +381,7 @@ public class Mua {
      *                       fail.
      * @return
      */
-    public ListenableFuture<Boolean> submit(final String emailId, final Identity identity, @NullableDecl String draftMailboxId, final Mailbox sent) {
+    public ListenableFuture<Boolean> submit(final String emailId, final Identity identity, @NullableDecl String draftMailboxId, final IdentifiableSpecialMailbox sent) {
         final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
         final ListenableFuture<Boolean> future = submit(emailId, identity, draftMailboxId, sent, multiCall);
         multiCall.execute();
@@ -389,7 +389,7 @@ public class Mua {
     }
 
 
-    private ListenableFuture<Boolean> submit(@NonNullDecl final String emailId, @NonNullDecl final Identity identity, @NullableDecl String draftMailboxId, @NullableDecl final Mailbox sent, final JmapClient.MultiCall multiCall) {
+    private ListenableFuture<Boolean> submit(@NonNullDecl final String emailId, @NonNullDecl final Identity identity, @NullableDecl String draftMailboxId, @NullableDecl final IdentifiableSpecialMailbox sent, final JmapClient.MultiCall multiCall) {
         Preconditions.checkNotNull(emailId);
         Preconditions.checkNotNull(identity);
         final Optional<ListenableFuture<MethodResponses>> mailboxCreateFutureOptional = CreateUtil.mailbox(multiCall, sent, Role.SENT);
@@ -428,22 +428,22 @@ public class Mua {
     }
 
     public ListenableFuture<Boolean> send(final Email email, final Identity identity) {
-        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<Mailbox>, Boolean>() {
+        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
             @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl Collection<Mailbox> mailboxes) {
+            public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) {
                 Preconditions.checkNotNull(mailboxes);
-                final Mailbox draft = MailboxUtils.find(mailboxes, Role.DRAFTS);
-                final Mailbox sent = MailboxUtils.find(mailboxes, Role.SENT);
+                final IdentifiableSpecialMailbox draft = MailboxUtils.find(mailboxes, Role.DRAFTS);
+                final IdentifiableSpecialMailbox sent = MailboxUtils.find(mailboxes, Role.SENT);
                 return send(email, identity, draft, sent);
             }
         }, MoreExecutors.directExecutor());
     }
 
-    public ListenableFuture<Boolean> send(final Email email, final Identity identity, final Mailbox draft, final Mailbox sent) {
+    public ListenableFuture<Boolean> send(final Email email, final Identity identity, final IdentifiableSpecialMailbox drafts, final IdentifiableSpecialMailbox sent) {
         final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
         ListenableFuture<List<Boolean>> future = Futures.allAsList(
-                draft(email, draft, multiCall),
-                submit("#e0", identity, draft == null ? CreateUtil.createIdReference(Role.DRAFTS) : draft.getId(), sent, multiCall)
+                draft(email, drafts, multiCall),
+                submit("#e0", identity, drafts == null ? CreateUtil.createIdReference(Role.DRAFTS) : drafts.getId(), sent, multiCall)
         );
         multiCall.execute();
         return Futures.transform(future, new Function<List<Boolean>, Boolean>() {
@@ -507,7 +507,7 @@ public class Mua {
      *                Do not pass null if an Archive mailbox exists on the server as this call will attempt to create
      *                one and fail.
      */
-    public ListenableFuture<Boolean> removeFromMailbox(Collection<Email> emails, @NonNullDecl  Mailbox mailbox, @NullableDecl final Mailbox archive) {
+    public ListenableFuture<Boolean> removeFromMailbox(Collection<Email> emails, @NonNullDecl  Mailbox mailbox, @NullableDecl final IdentifiableSpecialMailbox archive) {
         Preconditions.checkNotNull(mailbox);
         return removeFromMailbox(emails, mailbox.getId(), archive);
     }
@@ -523,17 +523,17 @@ public class Mua {
      * @return
      */
     public ListenableFuture<Boolean> removeFromMailbox(final Collection<Email> emails, final String mailboxId) {
-        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<Mailbox>, Boolean>() {
+        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
             @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl Collection<Mailbox> mailboxes) throws Exception {
+            public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) throws Exception {
                 Preconditions.checkNotNull(mailboxes);
-                final Mailbox archive = MailboxUtils.find(mailboxes, Role.ARCHIVE);
+                final IdentifiableSpecialMailbox archive = MailboxUtils.find(mailboxes, Role.ARCHIVE);
                 return removeFromMailbox(emails, mailboxId, archive);
             }
         }, MoreExecutors.directExecutor());
     }
 
-    private ListenableFuture<Boolean> removeFromMailbox(Collection<Email> emails, String mailboxId, @NullableDecl final Mailbox archive) {
+    private ListenableFuture<Boolean> removeFromMailbox(Collection<Email> emails, String mailboxId, @NullableDecl final IdentifiableSpecialMailbox archive) {
         Preconditions.checkNotNull(emails);
         Preconditions.checkNotNull(mailboxId);
         final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
@@ -579,9 +579,9 @@ public class Mua {
      * @param emails A collection of emails. Usually all messages in a thread
      */
     public ListenableFuture<Boolean> moveToTrash(final Collection<Email> emails) {
-        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<Mailbox>, Boolean>() {
+        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
             @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl Collection<Mailbox> mailboxes) {
+            public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) {
                 Preconditions.checkNotNull(mailboxes);
                 return moveToTrash(emails, MailboxUtils.find(mailboxes, Role.TRASH));
             }
@@ -598,7 +598,7 @@ public class Mua {
      *               Do not pass null if a Trash mailbox exists on the server as this call will attempt to create one
      *               and fail.
      */
-    public ListenableFuture<Boolean> moveToTrash(Collection<Email> emails, @NullableDecl final Mailbox trash) {
+    public ListenableFuture<Boolean> moveToTrash(Collection<Email> emails, @NullableDecl final IdentifiableSpecialMailbox trash) {
         final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
         final Optional<ListenableFuture<MethodResponses>> mailboxCreateFutureOptional = CreateUtil.mailbox(multiCall, trash, Role.TRASH);
         ImmutableMap.Builder<String, Map<String, Object>> emailPatchObjectMapBuilder = ImmutableMap.builder();
@@ -701,7 +701,7 @@ public class Mua {
                     final Update<Thread> update = Update.of(changesResponse, createdResponse, updatedResponse);
                     cache.updateThreads(jmapClient.getUsername(), update);
                     settableFuture.set(Status.of(update));
-                } catch (InterruptedException | ExecutionException | CacheWriteException e) {
+                } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
                     settableFuture.setException(extractException(e));
                 }
             }
@@ -723,7 +723,7 @@ public class Mua {
                     final Update<Email> update = Update.of(changesResponse, createdResponse, updatedResponse);
                     cache.updateEmails(jmapClient.getUsername(), update, Email.MUTABLE_PROPERTIES);
                     settableFuture.set(Status.of(update));
-                } catch (InterruptedException | ExecutionException | CacheWriteException e) {
+                } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
                     settableFuture.setException(extractException(e));
                 }
             }
@@ -866,7 +866,7 @@ public class Mua {
                         list.add(fetchMissingThreads(query.toQueryString(), true));
                         settableFuture.setFuture(transform(list));
                     }
-                } catch (InterruptedException | ExecutionException e) {
+                } catch (InterruptedException | ExecutionException | CacheWriteException e) {
                     settableFuture.setException(extractException(e));
                 }
             }
