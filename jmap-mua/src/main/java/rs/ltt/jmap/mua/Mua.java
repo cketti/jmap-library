@@ -960,7 +960,7 @@ public class Mua {
     }
 
     public static class Builder {
-        private String account;
+        private String username;
         private String password;
         private SessionCache sessionCache = new SessionFileCache();
         private Cache cache = new InMemoryCache();
@@ -969,8 +969,8 @@ public class Mua {
 
         }
 
-        public Builder account(String account) {
-            this.account = account;
+        public Builder username(String username) {
+            this.username = username;
             return this;
         }
 
@@ -990,7 +990,7 @@ public class Mua {
         }
 
         public Mua build() {
-            JmapClient jmapClient = new JmapClient(this.account, this.password);
+            JmapClient jmapClient = new JmapClient(this.username, this.password);
             jmapClient.setSessionCache(this.sessionCache);
             return new Mua(jmapClient, cache);
         }

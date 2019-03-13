@@ -73,7 +73,7 @@ public class Main {
 
         final String username = args[0];
         final String password = args[1];
-        final Mua mua = Mua.builder().account(username).password(password).cache(myInMemoryCache).build();
+        final Mua mua = Mua.builder().username(username).password(password).cache(myInMemoryCache).build();
 
         DefaultTerminalFactory defaultTerminalFactory = new DefaultTerminalFactory();
         try {
