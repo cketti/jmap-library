@@ -83,7 +83,6 @@ public class InMemoryCache implements Cache {
 
     @Override
     public void updateMailboxes(String account, Update<Mailbox> mailboxUpdate, final String[] updatedProperties) throws CacheWriteException {
-        System.err.println("update "+mailboxUpdate);
         synchronized (this.mailboxes) {
             for (Mailbox mailbox : mailboxUpdate.getCreated()) {
                 this.mailboxes.put(mailbox.getId(), mailbox);
