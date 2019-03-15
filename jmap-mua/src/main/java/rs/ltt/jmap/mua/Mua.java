@@ -145,7 +145,7 @@ public class Mua {
     }
 
     private ListenableFuture<Status> updateIdentities(final String state, JmapClient.MultiCall multiCall) {
-        Preconditions.checkNotNull(state);
+        Preconditions.checkNotNull(state, "State can not be null when updating identities");
         final SettableFuture<Status> settableFuture = SettableFuture.create();
         final UpdateUtil.MethodResponsesFuture methodResponsesFuture = UpdateUtil.identities(multiCall, state);
         methodResponsesFuture.changes.addListener(new Runnable() {
@@ -231,7 +231,7 @@ public class Mua {
     }
 
     private ListenableFuture<Status> updateMailboxes(final String state, final JmapClient.MultiCall multiCall) {
-        Preconditions.checkNotNull(state);
+        Preconditions.checkNotNull(state, "State can not be null when updating mailboxes");
         final SettableFuture<Status> settableFuture = SettableFuture.create();
         final UpdateUtil.MethodResponsesFuture methodResponsesFuture = UpdateUtil.mailboxes(multiCall, state);
         methodResponsesFuture.changes.addListener(new Runnable() {
@@ -256,7 +256,7 @@ public class Mua {
      * Stores an email as a draft. This method will take care of adding the draft and seen keyword and moving the email
      * to the draft mailbox.
      *
-     * @param email  The email that should be saved as a draft
+     * @param email The email that should be saved as a draft
      * @return
      */
     public ListenableFuture<Boolean> draft(final Email email) {
@@ -295,7 +295,7 @@ public class Mua {
     }
 
     private ListenableFuture<Boolean> draft(final Email email, final IdentifiableSpecialMailbox drafts, final JmapClient.MultiCall multiCall) {
-        Preconditions.checkNotNull(email);
+        Preconditions.checkNotNull(email, "Email can not be null when attempting to create a draft");
         Preconditions.checkState(email.getId() == null, "id is a server-set property");
         Preconditions.checkState(email.getBlobId() == null, "blobId is a server-set property");
         Preconditions.checkState(email.getThreadId() == null, "threadId is a server-set property");
@@ -332,7 +332,7 @@ public class Mua {
         return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) {
-                Preconditions.checkNotNull(mailboxes);
+                Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
                 final IdentifiableSpecialMailbox drafts = MailboxUtils.find(mailboxes, Role.DRAFTS);
                 final String draftMailboxId;
                 if (drafts == null || !email.getMailboxIds().containsKey(drafts.getId())) {
@@ -342,26 +342,6 @@ public class Mua {
                 }
                 final IdentifiableSpecialMailbox sent = MailboxUtils.find(mailboxes, Role.SENT);
                 return submit(email.getId(), identity, draftMailboxId, sent);
-            }
-        }, MoreExecutors.directExecutor());
-    }
-
-    /**
-     * Submits (sends / EmailSubmission) a previously drafted email. The email will be removed from the Drafts mailbox
-     * and put into the Sent mailbox after successful submission. Additionally the draft keyword will be removed.
-     *
-     * @param emailId The id of the email that should be submitted
-     * @param identity The identity used to submit that email
-     * @return
-     */
-    public ListenableFuture<Boolean> submit(final String emailId, final Identity identity) {
-        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
-            @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) {
-                Preconditions.checkNotNull(mailboxes);
-                final IdentifiableSpecialMailbox drafts = MailboxUtils.find(mailboxes, Role.DRAFTS);
-                final IdentifiableSpecialMailbox sent = MailboxUtils.find(mailboxes, Role.SENT);
-                return submit(emailId, identity, drafts == null ? null : drafts.getId(), sent);
             }
         }, MoreExecutors.directExecutor());
     }
@@ -388,10 +368,9 @@ public class Mua {
         return future;
     }
 
-
     private ListenableFuture<Boolean> submit(@NonNullDecl final String emailId, @NonNullDecl final Identity identity, @NullableDecl String draftMailboxId, @NullableDecl final IdentifiableSpecialMailbox sent, final JmapClient.MultiCall multiCall) {
-        Preconditions.checkNotNull(emailId);
-        Preconditions.checkNotNull(identity);
+        Preconditions.checkNotNull(emailId, "emailId can not be null when attempting to submit");
+        Preconditions.checkNotNull(identity, "identity can not be null when attempting to submit an email");
         final Optional<ListenableFuture<MethodResponses>> mailboxCreateFutureOptional = CreateUtil.mailbox(multiCall, sent, Role.SENT);
         final Patches.Builder patchesBuilder = Patches.builder();
         patchesBuilder.remove("keywords/" + Keyword.DRAFT);
@@ -427,11 +406,31 @@ public class Mua {
 
     }
 
+    /**
+     * Submits (sends / EmailSubmission) a previously drafted email. The email will be removed from the Drafts mailbox
+     * and put into the Sent mailbox after successful submission. Additionally the draft keyword will be removed.
+     *
+     * @param emailId  The id of the email that should be submitted
+     * @param identity The identity used to submit that email
+     * @return
+     */
+    public ListenableFuture<Boolean> submit(final String emailId, final Identity identity) {
+        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
+            @Override
+            public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) {
+                Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
+                final IdentifiableSpecialMailbox drafts = MailboxUtils.find(mailboxes, Role.DRAFTS);
+                final IdentifiableSpecialMailbox sent = MailboxUtils.find(mailboxes, Role.SENT);
+                return submit(emailId, identity, drafts == null ? null : drafts.getId(), sent);
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
     public ListenableFuture<Boolean> send(final Email email, final Identity identity) {
         return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) {
-                Preconditions.checkNotNull(mailboxes);
+                Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
                 final IdentifiableSpecialMailbox draft = MailboxUtils.find(mailboxes, Role.DRAFTS);
                 final IdentifiableSpecialMailbox sent = MailboxUtils.find(mailboxes, Role.SENT);
                 return send(email, identity, draft, sent);
@@ -507,35 +506,14 @@ public class Mua {
      *                Do not pass null if an Archive mailbox exists on the server as this call will attempt to create
      *                one and fail.
      */
-    public ListenableFuture<Boolean> removeFromMailbox(Collection<Email> emails, @NonNullDecl  Mailbox mailbox, @NullableDecl final IdentifiableSpecialMailbox archive) {
-        Preconditions.checkNotNull(mailbox);
+    public ListenableFuture<Boolean> removeFromMailbox(Collection<Email> emails, @NonNullDecl Mailbox mailbox, @NullableDecl final IdentifiableSpecialMailbox archive) {
+        Preconditions.checkNotNull(mailbox, "Mailbox can not be null when attempting to remove it from a collection of emails");
         return removeFromMailbox(emails, mailbox.getId(), archive);
     }
 
-
-    /**
-     * Removes the individual emails in this collection (usually applied to an entire thread) from a given mailbox. If a
-     * certain email was not in this mailbox it will be skipped. If removing an email from this mailbox would otherwise
-     * lead to the email having no mailbox it will be moved to the Archive mailbox.
-     *
-     * @param emails A collection of emails. Usually all messages in a thread
-     * @param mailboxId The id of the mailbox from which those emails should be removed
-     * @return
-     */
-    public ListenableFuture<Boolean> removeFromMailbox(final Collection<Email> emails, final String mailboxId) {
-        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
-            @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) throws Exception {
-                Preconditions.checkNotNull(mailboxes);
-                final IdentifiableSpecialMailbox archive = MailboxUtils.find(mailboxes, Role.ARCHIVE);
-                return removeFromMailbox(emails, mailboxId, archive);
-            }
-        }, MoreExecutors.directExecutor());
-    }
-
     private ListenableFuture<Boolean> removeFromMailbox(Collection<Email> emails, String mailboxId, @NullableDecl final IdentifiableSpecialMailbox archive) {
-        Preconditions.checkNotNull(emails);
-        Preconditions.checkNotNull(mailboxId);
+        Preconditions.checkNotNull(emails, "emails can not be null when attempting to remove them from a mailbox");
+        Preconditions.checkNotNull(mailboxId, "mailboxId can not be null when attempting to remove emails");
         final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
         final Optional<ListenableFuture<MethodResponses>> mailboxCreateFutureOptional = CreateUtil.mailbox(multiCall, archive, Role.ARCHIVE);
         ImmutableMap.Builder<String, Map<String, Object>> emailPatchObjectMapBuilder = ImmutableMap.builder();
@@ -544,7 +522,7 @@ public class Mua {
                 continue;
             }
             Patches.Builder patchesBuilder = Patches.builder();
-            patchesBuilder.remove("mailboxIds/" +mailboxId);
+            patchesBuilder.remove("mailboxIds/" + mailboxId);
             if (email.getMailboxIds().size() == 1) {
                 if (mailboxCreateFutureOptional.isPresent()) {
                     patchesBuilder.set("mailboxIds/" + CreateUtil.createIdReference(Role.ARCHIVE), true);
@@ -572,6 +550,26 @@ public class Mua {
     }
 
     /**
+     * Removes the individual emails in this collection (usually applied to an entire thread) from a given mailbox. If a
+     * certain email was not in this mailbox it will be skipped. If removing an email from this mailbox would otherwise
+     * lead to the email having no mailbox it will be moved to the Archive mailbox.
+     *
+     * @param emails    A collection of emails. Usually all messages in a thread
+     * @param mailboxId The id of the mailbox from which those emails should be removed
+     * @return
+     */
+    public ListenableFuture<Boolean> removeFromMailbox(final Collection<Email> emails, final String mailboxId) {
+        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
+            @Override
+            public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) throws Exception {
+                Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
+                final IdentifiableSpecialMailbox archive = MailboxUtils.find(mailboxes, Role.ARCHIVE);
+                return removeFromMailbox(emails, mailboxId, archive);
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
+    /**
      * Moves all emails in this collection (usually applied to an entire thread) to the trash mailbox. The emails will
      * be removed from all other mailboxes. If a certain email in this collection is already only in the trash mailbox
      * this email will not be processed.
@@ -582,7 +580,7 @@ public class Mua {
         return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableSpecialMailbox>, Boolean>() {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableSpecialMailbox> mailboxes) {
-                Preconditions.checkNotNull(mailboxes);
+                Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
                 return moveToTrash(emails, MailboxUtils.find(mailboxes, Role.TRASH));
             }
         }, MoreExecutors.directExecutor());
@@ -688,7 +686,7 @@ public class Mua {
     }
 
     private ListenableFuture<Status> updateThreads(final String state, final JmapClient.MultiCall multiCall) {
-        Preconditions.checkNotNull(state);
+        Preconditions.checkNotNull(state, "state can not be null when updating threads");
         final SettableFuture<Status> settableFuture = SettableFuture.create();
         final UpdateUtil.MethodResponsesFuture methodResponsesFuture = UpdateUtil.threads(multiCall, state);
         methodResponsesFuture.changes.addListener(new Runnable() {
@@ -710,7 +708,7 @@ public class Mua {
     }
 
     private ListenableFuture<Status> updateEmails(final String state, final JmapClient.MultiCall multiCall) {
-        Preconditions.checkNotNull(state);
+        Preconditions.checkNotNull(state, "state can not be null when updating emails");
         final SettableFuture<Status> settableFuture = SettableFuture.create();
         final UpdateUtil.MethodResponsesFuture methodResponsesFuture = UpdateUtil.emails(multiCall, state);
         methodResponsesFuture.changes.addListener(new Runnable() {
@@ -736,38 +734,38 @@ public class Mua {
     }
 
     public ListenableFuture<Status> query(@NonNullDecl final EmailQuery query) {
-        final ListenableFuture<QueryState> queryStateFuture = ioExecutorService.submit(new Callable<QueryState>() {
+        final ListenableFuture<QueryStateWrapper> queryStateFuture = ioExecutorService.submit(new Callable<QueryStateWrapper>() {
             @Override
-            public QueryState call() throws Exception {
+            public QueryStateWrapper call() throws Exception {
                 return cache.getQueryState(jmapClient.getUsername(), query.toQueryString());
             }
         });
 
-        return Futures.transformAsync(queryStateFuture, new AsyncFunction<QueryState, Status>() {
+        return Futures.transformAsync(queryStateFuture, new AsyncFunction<QueryStateWrapper, Status>() {
             @Override
-            public ListenableFuture<Status> apply(@NullableDecl QueryState queryState) throws Exception {
-                Preconditions.checkNotNull(queryState);
+            public ListenableFuture<Status> apply(@NullableDecl QueryStateWrapper queryStateWrapper) {
+                Preconditions.checkNotNull(queryStateWrapper, "QueryStateWrapper can not be null");
 
-                if (queryState.queryState == null) {
-                    return initialQuery(query, queryState);
+                if (queryStateWrapper.queryState == null) {
+                    return initialQuery(query, queryStateWrapper);
                 } else {
-                    //TODO we probably want to handle the case where we have a queryState but no email and threadId state. this is unlikely and indicates a probably corrupt cache
-                    Preconditions.checkNotNull(queryState.objectsState.emailState);
-                    Preconditions.checkNotNull(queryState.objectsState.threadState);
-                    return refreshQuery(query, queryState);
+                    Preconditions.checkNotNull(queryStateWrapper.objectsState, "ObjectsState can not be null if queryState was not");
+                    Preconditions.checkNotNull(queryStateWrapper.objectsState.emailState, "emailState can not be null if queryState was not");
+                    Preconditions.checkNotNull(queryStateWrapper.objectsState.threadState, "threadState can not be null if queryState was not");
+                    return refreshQuery(query, queryStateWrapper);
                 }
             }
         }, MoreExecutors.directExecutor());
     }
 
-    private ListenableFuture<Status> refreshQuery(@NonNullDecl final EmailQuery query, @NonNullDecl final QueryState queryState) {
-        Preconditions.checkNotNull(queryState.queryState);
+    private ListenableFuture<Status> refreshQuery(@NonNullDecl final EmailQuery query, @NonNullDecl final QueryStateWrapper queryStateWrapper) {
+        Preconditions.checkNotNull(queryStateWrapper.queryState, "QueryState can not be null when attempting to refresh query");
         final SettableFuture<Status> settableFuture = SettableFuture.create();
         final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
 
-        final List<ListenableFuture<Status>> piggyBackedFuturesList = piggyBack(queryState.objectsState, multiCall);
+        final List<ListenableFuture<Status>> piggyBackedFuturesList = piggyBack(queryStateWrapper.objectsState, multiCall);
 
-        final Request.Invocation queryChangesInvocation = Request.Invocation.create(new QueryChangesEmailMethodCall(queryState.queryState, query));
+        final Request.Invocation queryChangesInvocation = Request.Invocation.create(new QueryChangesEmailMethodCall(queryStateWrapper.queryState, query));
         final ListenableFuture<MethodResponses> queryChangesResponsesFuture = multiCall.add(queryChangesInvocation);
         final ListenableFuture<MethodResponses> getThreadIdResponsesFuture = multiCall.call(new GetEmailMethodCall(queryChangesInvocation.createReference(Request.Invocation.ResultReference.Path.ADDED_IDS), new String[]{"threadId"}));
 
@@ -807,15 +805,15 @@ public class Mua {
         return settableFuture;
     }
 
-    private ListenableFuture<Status> initialQuery(@NonNullDecl final EmailQuery query, @NonNullDecl final QueryState queryState) {
+    private ListenableFuture<Status> initialQuery(@NonNullDecl final EmailQuery query, @NonNullDecl final QueryStateWrapper queryStateWrapper) {
 
-        Preconditions.checkState(queryState.queryState == null, "QueryState must be NULL when calling initialQuery");
+        Preconditions.checkState(queryStateWrapper.queryState == null, "QueryState must be NULL when calling initialQuery");
 
         final SettableFuture<Status> settableFuture = SettableFuture.create();
         JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
 
         //these need to be processed *before* the Query call or else the fetchMissing will not honor newly fetched ids
-        final List<ListenableFuture<Status>> piggyBackedFuturesList = piggyBack(queryState.objectsState, multiCall);
+        final List<ListenableFuture<Status>> piggyBackedFuturesList = piggyBack(queryStateWrapper.objectsState, multiCall);
 
         final Request.Invocation queryInvocation = Request.Invocation.create(new QueryEmailMethodCall(query));
         Request.Invocation getThreadIdsInvocation = Request.Invocation.create(new GetEmailMethodCall(queryInvocation.createReference(Request.Invocation.ResultReference.Path.IDS), new String[]{"threadId"}));
@@ -825,7 +823,7 @@ public class Mua {
 
         final Optional<ListenableFuture<MethodResponses>> getThreadsResponsesFutureOptional;
         final Optional<ListenableFuture<MethodResponses>> getEmailResponsesFutureOptional;
-        if (queryState.objectsState.threadState == null && queryState.objectsState.emailState == null) {
+        if (queryStateWrapper.objectsState.threadState == null && queryStateWrapper.objectsState.emailState == null) {
             Request.Invocation getThreadsInvocation = Request.Invocation.create(new GetThreadMethodCall(getThreadIdsInvocation.createReference(Request.Invocation.ResultReference.Path.LIST_THREAD_IDS)));
             Request.Invocation getEmailInvocation = Request.Invocation.create(new GetEmailMethodCall(getThreadsInvocation.createReference(Request.Invocation.ResultReference.Path.LIST_EMAIL_IDS), true));
             getThreadsResponsesFutureOptional = Optional.of(multiCall.add(getThreadsInvocation));

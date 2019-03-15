@@ -31,7 +31,8 @@ public interface Cache {
 
     String getMailboxState(String username);
 
-    @NonNullDecl QueryState getQueryState(String username, @NullableDecl String query);
+    @NonNullDecl
+    QueryStateWrapper getQueryState(String username, @NullableDecl String query);
 
     @NonNullDecl ObjectsState getObjectsState(String username);
 

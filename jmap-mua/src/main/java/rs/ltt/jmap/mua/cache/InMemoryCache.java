@@ -53,13 +53,13 @@ public class InMemoryCache implements Cache {
 
 
     @Override
-    public QueryState getQueryState(String username, String query) {
+    public QueryStateWrapper getQueryState(String username, String query) {
         synchronized (this.queryResults) {
             final String mailboxState = this.mailboxState;
             final String threadState = this.threadState;
             final String emailState = this.emailState;
             final QueryResult queryResult = queryResults.get(query);
-            return new QueryState(queryResult == null ? null : queryResult.queryState, new ObjectsState(mailboxState, threadState, emailState));
+            return new QueryStateWrapper(queryResult == null ? null : queryResult.queryState, new ObjectsState(mailboxState, threadState, emailState));
         }
     }
 

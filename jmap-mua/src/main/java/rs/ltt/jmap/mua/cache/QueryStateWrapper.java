@@ -16,13 +16,13 @@
 
 package rs.ltt.jmap.mua.cache;
 
-public class QueryState {
+public class QueryStateWrapper {
 
     public final ObjectsState objectsState;
     public final String queryState;
 
 
-    public QueryState(String queryState, ObjectsState objectsState) {
+    public QueryStateWrapper(String queryState, ObjectsState objectsState) {
         this.queryState = queryState;
         this.objectsState = objectsState;
     }
