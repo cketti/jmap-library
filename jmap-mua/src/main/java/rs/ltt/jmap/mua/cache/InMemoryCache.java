@@ -285,7 +285,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public Missing getMissingThreadIds(String account, final String query) throws CacheReadException {
+    public Missing getMissing(String account, final String query) throws CacheReadException {
         final List<String> threadIds = new ArrayList<>();
         synchronized (this.queryResults) {
             final QueryResult queryResult = this.queryResults.get(query);
@@ -303,43 +303,9 @@ public class InMemoryCache implements Cache {
                     iterator.remove();
                 }
             }
-            return new Missing(query, this.threadState, threadIds.toArray(new String[0]));
+            return new Missing(this.threadState, this.emailState, threadIds);
         }
     }
-
-    @Override
-    public Missing getMissingEmailIds(String account, String query) throws CacheReadException {
-        final List<String> threadIds = new ArrayList<>();
-        synchronized (this.queryResults) {
-            final QueryResult queryResult = this.queryResults.get(query);
-            if (queryResult == null) {
-                throw new CacheReadException("Unable to find cached version");
-            }
-            for (QueryResultItem item : queryResult.items) {
-                threadIds.add(item.getThreadId());
-            }
-        }
-        final List<String> emailIds = new ArrayList<>();
-        synchronized (this.threads) {
-            for(String threadId : threadIds) {
-                final Thread thread = this.threads.get(threadId);
-                if (thread == null) {
-                    throw new CacheReadException("Unable to find cached version of thread "+threadId);
-                }
-                emailIds.addAll(thread.getEmailIds());
-            }
-        }
-        synchronized (this.emails) {
-            Iterator<String> iterator = emailIds.iterator();
-            while (iterator.hasNext()) {
-                if (this.emails.containsKey(iterator.next())) {
-                    iterator.remove();
-                }
-            }
-            return new Missing(query, this.emailState, emailIds.toArray(new String[0]));
-        }
-    }
-
 
     private static <T extends AbstractIdentifiableEntity> void copyProperty(T target, T source, String property, Class<T> clazz) throws NoSuchFieldException, IllegalAccessException {
         Field field = clazz.getDeclaredField(property);

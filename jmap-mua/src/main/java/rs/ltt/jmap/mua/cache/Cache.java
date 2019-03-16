@@ -18,8 +18,8 @@ package rs.ltt.jmap.mua.cache;
 
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
-import rs.ltt.jmap.common.entity.*;
 import rs.ltt.jmap.common.entity.Thread;
+import rs.ltt.jmap.common.entity.*;
 import rs.ltt.jmap.mua.entity.QueryResultItem;
 
 import java.util.Collection;
@@ -34,7 +34,8 @@ public interface Cache {
     @NonNullDecl
     QueryStateWrapper getQueryState(String username, @NullableDecl String query);
 
-    @NonNullDecl ObjectsState getObjectsState(String username);
+    @NonNullDecl
+    ObjectsState getObjectsState(String username);
 
     void setMailboxes(String account, String state, Mailbox[] mailboxes) throws CacheWriteException;
 
@@ -69,11 +70,8 @@ public interface Cache {
 
     void setQueryResult(String account, String query, String queryState, QueryResultItem[] items) throws CacheWriteException;
 
-    void updateQueryResults(String account, String query, QueryUpdate<Email,QueryResultItem> update) throws CacheWriteException, CacheConflictException;
+    void updateQueryResults(String account, String query, QueryUpdate<Email, QueryResultItem> update) throws CacheWriteException, CacheConflictException;
 
-    Missing getMissingThreadIds(String account, String query) throws CacheReadException;
-
-    Missing getMissingEmailIds(String account, String query) throws CacheReadException;
-
-
+    Missing getMissing(String account, String query) throws CacheReadException;
 }
+

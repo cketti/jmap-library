@@ -792,7 +792,9 @@ public class Mua {
                         final List<ListenableFuture<Status>> list = new ArrayList<>();
                         list.add(Futures.immediateFuture(piggybackStatus));
                         list.add(Futures.immediateFuture(queryUpdateStatus));
-                        list.add(fetchMissingThreads(query.toQueryString(), true));
+                        //TODO this should be unnecessary. At the time of an refresh we have previously loaded all ids
+                        //TODO: however it might be that a previous fetchMissing() has failed. so better safe than sorry
+                        list.add(fetchMissing(query.toQueryString()));
                         settableFuture.setFuture(transform(list));
                     }
 
@@ -861,7 +863,7 @@ public class Mua {
                     } else {
                         List<ListenableFuture<Status>> list = new ArrayList<>();
                         list.add(Futures.immediateFuture(Status.UPDATED));
-                        list.add(fetchMissingThreads(query.toQueryString(), true));
+                        list.add(fetchMissing(query.toQueryString()));
                         settableFuture.setFuture(transform(list));
                     }
                 } catch (InterruptedException | ExecutionException | CacheWriteException e) {
@@ -872,82 +874,52 @@ public class Mua {
         return settableFuture;
     }
 
-    private ListenableFuture<Status> fetchMissingThreads(final String query, final boolean fetchEmails) {
+    private ListenableFuture<Status> fetchMissing(@NonNullDecl final String queryString) {
+        Preconditions.checkNotNull(queryString, "QueryString can not be null");
         try {
-            return fetchMissingThreads(cache.getMissingThreadIds(jmapClient.getUsername(), query), fetchEmails);
+            return fetchMissing(cache.getMissing(jmapClient.getUsername(), queryString));
         } catch (CacheReadException e) {
             return Futures.immediateFailedFuture(e);
         }
     }
 
-    private ListenableFuture<Status> fetchMissingThreads(final Missing missing, final boolean fetchEmails) {
-        if (missing.ids.length == 0) {
-            LOGGER.info("no missing threads to fetch");
-            if (fetchEmails) {
-                return fetchMissingEmails(missing.query);
-            }
+    private ListenableFuture<Status> fetchMissing(final Missing missing) {
+        Preconditions.checkNotNull(missing,"Missing can not be null");
+        Preconditions.checkNotNull(missing.threadIds, "Missing.ThreadIds can not be null; pass empty list instead");
+        if (missing.threadIds.size() == 0) {
             return Futures.immediateFuture(Status.UNCHANGED);
         }
-        LOGGER.info("fetching " + missing.ids.length + " missing threads");
+        LOGGER.info("fetching " + missing.threadIds.size() + " missing threads");
         final SettableFuture<Status> settableFuture = SettableFuture.create();
         final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
-        final ListenableFuture<Status> updateFuture = updateThreads(missing.state, multiCall);
-        final ListenableFuture<MethodResponses> getThreadsResponsesFuture = multiCall.call(new GetThreadMethodCall(missing.ids));
+        final ListenableFuture<Status> updateThreadsFuture = updateThreads(missing.threadState, multiCall);
+        final ListenableFuture<Status> updateEmailsFuture = updateEmails(missing.emailState, multiCall);
+        Request.Invocation getThreadsInvocation = Request.Invocation.create(new GetThreadMethodCall(missing.threadIds.toArray(new String[0])));
+        final ListenableFuture<MethodResponses> getThreadsResponsesFuture = multiCall.add(getThreadsInvocation);
+        final ListenableFuture<MethodResponses> getEmailsResponsesFuture = multiCall.call(new GetEmailMethodCall(getThreadsInvocation.createReference(Request.Invocation.ResultReference.Path.LIST_EMAIL_IDS), true));
         multiCall.execute();
         getThreadsResponsesFuture.addListener(new Runnable() {
             @Override
             public void run() {
                 try {
-                    Status updateStatus = updateFuture.get();
-                    if (updateStatus == Status.HAS_MORE) {
+                    Status updateThreadsStatus = updateThreadsFuture.get();
+                    if (updateThreadsStatus == Status.HAS_MORE) {
                         //throw
                     }
+
+                    Status updateEmailStatus = updateEmailsFuture.get();
+                    if (updateEmailStatus == Status.HAS_MORE) {
+                        //throw
+                    }
+
                     GetThreadMethodResponse getThreadMethodResponse = getThreadsResponsesFuture.get().getMain(GetThreadMethodResponse.class);
                     cache.addThreads(jmapClient.getUsername(), getThreadMethodResponse.getState(), getThreadMethodResponse.getList());
-                    if (fetchEmails) {
-                        settableFuture.setFuture(fetchMissingEmails(missing.query));
-                    } else {
-                        settableFuture.set(updateStatus);
-                    }
-                } catch (Exception e) {
-                    settableFuture.setException(extractException(e));
-                }
 
-            }
-        }, ioExecutorService);
-        return settableFuture;
-    }
-
-    private ListenableFuture<Status> fetchMissingEmails(final String query) {
-        try {
-            return fetchMissingEmails(cache.getMissingEmailIds(jmapClient.getUsername(), query));
-        } catch (CacheReadException e) {
-            return Futures.immediateFailedFuture(e);
-        }
-    }
-
-    private ListenableFuture<Status> fetchMissingEmails(final Missing missing) {
-        if (missing.ids.length == 0) {
-            LOGGER.info("no missing emails to fetch");
-            return Futures.immediateFuture(Status.UNCHANGED);
-        }
-        LOGGER.info("fetching " + missing.ids.length + " missing emails");
-        final SettableFuture<Status> settableFuture = SettableFuture.create();
-        final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
-        final ListenableFuture<Status> updateFuture = updateEmails(missing.state, multiCall);
-        final ListenableFuture<MethodResponses> getEmailsResponsesFuture = multiCall.call(new GetEmailMethodCall(missing.ids, true));
-        multiCall.execute();
-        getEmailsResponsesFuture.addListener(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Status updateStatus = updateFuture.get();
-                    if (updateStatus == Status.HAS_MORE) {
-                        //throw
-                    }
                     GetEmailMethodResponse getEmailMethodResponse = getEmailsResponsesFuture.get().getMain(GetEmailMethodResponse.class);
                     cache.addEmails(jmapClient.getUsername(), getEmailMethodResponse.getState(), getEmailMethodResponse.getList());
-                    settableFuture.set(updateStatus);
+
+                    settableFuture.set(Status.UPDATED);
+
                 } catch (Exception e) {
                     settableFuture.setException(extractException(e));
                 }

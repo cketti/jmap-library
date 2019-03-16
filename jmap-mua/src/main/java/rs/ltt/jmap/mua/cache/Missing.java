@@ -18,23 +18,26 @@ package rs.ltt.jmap.mua.cache;
 
 import com.google.common.base.MoreObjects;
 
+import java.util.List;
+
 public class Missing {
 
-    public final String query;
-    public final String state;
-    public final String[] ids;
+    public final String threadState;
+    public final String emailState;
+    public final List<String> threadIds;
 
-    public Missing(String query, String state, String[] ids) {
-        this.query = query;
-        this.state = state;
-        this.ids = ids;
+    public Missing(String threadState, String emailState, List<String> threadIds) {
+        this.threadState = threadState;
+        this.emailState = emailState;
+        this.threadIds = threadIds;
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("state", state)
-                .add("ids", ids)
+                .add("threadState", threadState)
+                .add("emailState", emailState)
+                .add("threadIds", threadIds)
                 .toString();
     }
 }
