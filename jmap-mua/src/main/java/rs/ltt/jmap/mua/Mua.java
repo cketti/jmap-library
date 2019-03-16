@@ -96,7 +96,7 @@ public class Mua {
         final ListenableFuture<String> identityStateFuture = ioExecutorService.submit(new Callable<String>() {
             @Override
             public String call() throws Exception {
-                return cache.getIdentityState(jmapClient.getUsername());
+                return cache.getIdentityState();
             }
         });
         return Futures.transformAsync(identityStateFuture, new AsyncFunction<String, Status>() {
@@ -134,7 +134,7 @@ public class Mua {
                 try {
                     final GetIdentityMethodResponse response = responseFuture.get().getMain(GetIdentityMethodResponse.class);
                     final Identity[] identities = response.getList();
-                    cache.setIdentities(jmapClient.getUsername(), response.getState(), identities);
+                    cache.setIdentities(response.getState(), identities);
                     settableFuture.set(Status.of(identities.length > 0));
                 } catch (Exception e) {
                     settableFuture.setException(extractException(e));
@@ -156,7 +156,7 @@ public class Mua {
                     GetIdentityMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetIdentityMethodResponse.class);
                     GetIdentityMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetIdentityMethodResponse.class);
                     final Update<Identity> update = Update.of(changesResponse, createdResponse, updatedResponse);
-                    cache.updateIdentities(jmapClient.getUsername(), update);
+                    cache.updateIdentities(update);
                     settableFuture.set(Status.of(update));
                 } catch (Exception e) {
                     settableFuture.setException(extractException(e));
@@ -180,7 +180,7 @@ public class Mua {
         final ListenableFuture<String> mailboxStateFuture = ioExecutorService.submit(new Callable<String>() {
             @Override
             public String call() {
-                return cache.getMailboxState(jmapClient.getUsername());
+                return cache.getMailboxState();
             }
         });
 
@@ -219,7 +219,7 @@ public class Mua {
                 try {
                     GetMailboxMethodResponse response = getMailboxMethodResponsesFuture.get().getMain(GetMailboxMethodResponse.class);
                     Mailbox[] mailboxes = response.getList();
-                    cache.setMailboxes(jmapClient.getUsername(), response.getState(), mailboxes);
+                    cache.setMailboxes(response.getState(), mailboxes);
                     settableFuture.set(Status.of(mailboxes.length > 0));
                 } catch (InterruptedException | ExecutionException | CacheWriteException e) {
                     settableFuture.setException(extractException(e));
@@ -242,7 +242,7 @@ public class Mua {
                     final GetMailboxMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetMailboxMethodResponse.class);
                     final GetMailboxMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetMailboxMethodResponse.class);
                     final Update<Mailbox> update = Update.of(changesResponse, createdResponse, updatedResponse);
-                    cache.updateMailboxes(jmapClient.getUsername(), update, changesResponse.getUpdatedProperties());
+                    cache.updateMailboxes(update, changesResponse.getUpdatedProperties());
                     settableFuture.set(Status.of(update));
                 } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
                     settableFuture.setException(extractException(e));
@@ -272,7 +272,7 @@ public class Mua {
         return ioExecutorService.submit(new Callable<Collection<? extends IdentifiableSpecialMailbox>>() {
             @Override
             public Collection<? extends IdentifiableSpecialMailbox> call() throws Exception {
-                return cache.getSpecialMailboxes(jmapClient.getUsername());
+                return cache.getSpecialMailboxes();
             }
         });
     }
@@ -633,7 +633,7 @@ public class Mua {
         final ListenableFuture<ObjectsState> objectsStateFuture = ioExecutorService.submit(new Callable<ObjectsState>() {
             @Override
             public ObjectsState call() throws Exception {
-                return cache.getObjectsState(jmapClient.getUsername());
+                return cache.getObjectsState();
             }
         });
 
@@ -697,7 +697,7 @@ public class Mua {
                     final GetThreadMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetThreadMethodResponse.class);
                     final GetThreadMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetThreadMethodResponse.class);
                     final Update<Thread> update = Update.of(changesResponse, createdResponse, updatedResponse);
-                    cache.updateThreads(jmapClient.getUsername(), update);
+                    cache.updateThreads(update);
                     settableFuture.set(Status.of(update));
                 } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
                     settableFuture.setException(extractException(e));
@@ -719,7 +719,7 @@ public class Mua {
                     final GetEmailMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetEmailMethodResponse.class);
                     final GetEmailMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetEmailMethodResponse.class);
                     final Update<Email> update = Update.of(changesResponse, createdResponse, updatedResponse);
-                    cache.updateEmails(jmapClient.getUsername(), update, Email.MUTABLE_PROPERTIES);
+                    cache.updateEmails(update, Email.MUTABLE_PROPERTIES);
                     settableFuture.set(Status.of(update));
                 } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
                     settableFuture.setException(extractException(e));
@@ -737,7 +737,7 @@ public class Mua {
         final ListenableFuture<QueryStateWrapper> queryStateFuture = ioExecutorService.submit(new Callable<QueryStateWrapper>() {
             @Override
             public QueryStateWrapper call() throws Exception {
-                return cache.getQueryState(jmapClient.getUsername(), query.toQueryString());
+                return cache.getQueryState(query.toQueryString());
             }
         });
 
@@ -781,7 +781,7 @@ public class Mua {
 
                     final QueryUpdate<Email, QueryResultItem> queryUpdate = QueryUpdate.of(queryChangesResponse, added);
 
-                    cache.updateQueryResults(jmapClient.getUsername(), query.toQueryString(), queryUpdate);
+                    cache.updateQueryResults(query.toQueryString(), queryUpdate);
 
                     Status piggybackStatus = transform(piggyBackedFuturesList).get(); //wait for updates before attempting to fetch
                     Status queryUpdateStatus = Status.of(queryUpdate);
@@ -845,15 +845,15 @@ public class Mua {
 
                     QueryResultItem[] queryResultItems = QueryResultUtils.of(queryResponse, getThreadIdsResponse);
 
-                    cache.setQueryResult(jmapClient.getUsername(), query.toQueryString(), queryResponse.getQueryState(), queryResultItems);
+                    cache.setQueryResult(query.toQueryString(), queryResponse.getQueryState(), queryResultItems);
 
                     if (getThreadsResponsesFutureOptional.isPresent()) {
                         GetThreadMethodResponse getThreadsResponse = getThreadsResponsesFutureOptional.get().get().getMain(GetThreadMethodResponse.class);
-                        cache.setThreads(jmapClient.getUsername(), getThreadsResponse.getState(), getThreadsResponse.getList());
+                        cache.setThreads(getThreadsResponse.getState(), getThreadsResponse.getList());
                     }
                     if (getEmailResponsesFutureOptional.isPresent()) {
                         GetEmailMethodResponse getEmailResponse = getEmailResponsesFutureOptional.get().get().getMain(GetEmailMethodResponse.class);
-                        cache.setEmails(jmapClient.getUsername(), getEmailResponse.getState(), getEmailResponse.getList());
+                        cache.setEmails(getEmailResponse.getState(), getEmailResponse.getList());
                     }
 
                     transform(piggyBackedFuturesList).get();
@@ -877,14 +877,14 @@ public class Mua {
     private ListenableFuture<Status> fetchMissing(@NonNullDecl final String queryString) {
         Preconditions.checkNotNull(queryString, "QueryString can not be null");
         try {
-            return fetchMissing(cache.getMissing(jmapClient.getUsername(), queryString));
+            return fetchMissing(cache.getMissing(queryString));
         } catch (CacheReadException e) {
             return Futures.immediateFailedFuture(e);
         }
     }
 
     private ListenableFuture<Status> fetchMissing(final Missing missing) {
-        Preconditions.checkNotNull(missing,"Missing can not be null");
+        Preconditions.checkNotNull(missing, "Missing can not be null");
         Preconditions.checkNotNull(missing.threadIds, "Missing.ThreadIds can not be null; pass empty list instead");
         if (missing.threadIds.size() == 0) {
             return Futures.immediateFuture(Status.UNCHANGED);
@@ -913,10 +913,10 @@ public class Mua {
                     }
 
                     GetThreadMethodResponse getThreadMethodResponse = getThreadsResponsesFuture.get().getMain(GetThreadMethodResponse.class);
-                    cache.addThreads(jmapClient.getUsername(), getThreadMethodResponse.getState(), getThreadMethodResponse.getList());
+                    cache.addThreads(getThreadMethodResponse.getState(), getThreadMethodResponse.getList());
 
                     GetEmailMethodResponse getEmailMethodResponse = getEmailsResponsesFuture.get().getMain(GetEmailMethodResponse.class);
-                    cache.addEmails(jmapClient.getUsername(), getEmailMethodResponse.getState(), getEmailMethodResponse.getList());
+                    cache.addEmails(getEmailMethodResponse.getState(), getEmailMethodResponse.getList());
 
                     settableFuture.set(Status.UPDATED);
 

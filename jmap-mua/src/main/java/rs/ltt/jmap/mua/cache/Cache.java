@@ -27,51 +27,51 @@ import java.util.Collection;
 public interface Cache {
 
     //states
-    String getIdentityState(String username);
+    String getIdentityState();
 
-    String getMailboxState(String username);
-
-    @NonNullDecl
-    QueryStateWrapper getQueryState(String username, @NullableDecl String query);
+    String getMailboxState();
 
     @NonNullDecl
-    ObjectsState getObjectsState(String username);
+    QueryStateWrapper getQueryState(@NullableDecl String query);
 
-    void setMailboxes(String account, String state, Mailbox[] mailboxes) throws CacheWriteException;
+    @NonNullDecl
+    ObjectsState getObjectsState();
 
-    void updateMailboxes(String account, Update<Mailbox> mailboxUpdate, String[] updatedProperties) throws CacheWriteException, CacheConflictException;
+    void setMailboxes(String state, Mailbox[] mailboxes) throws CacheWriteException;
 
-    Collection<? extends IdentifiableSpecialMailbox> getSpecialMailboxes(String account) throws NotSynchronizedException;
+    void updateMailboxes(Update<Mailbox> mailboxUpdate, String[] updatedProperties) throws CacheWriteException, CacheConflictException;
+
+    Collection<? extends IdentifiableSpecialMailbox> getSpecialMailboxes() throws NotSynchronizedException;
 
     //Threads
     //we probably don’t need a getThreads() method since we always access using the Queries
-    void setThreads(String account, String state, Thread[] threads);
+    void setThreads(String state, Thread[] threads);
 
-    void addThreads(String account, String state, Thread[] threads) throws CacheWriteException, CacheConflictException;
+    void addThreads(String state, Thread[] threads) throws CacheWriteException, CacheConflictException;
 
-    void updateThreads(String account, Update<Thread> threadUpdate) throws CacheWriteException, CacheConflictException;
+    void updateThreads(Update<Thread> threadUpdate) throws CacheWriteException, CacheConflictException;
 
     //Email
     //we probably don’t need a getEmail() method since we always access using the Queries
-    void setEmails(String account, String state, Email[] emails) throws CacheWriteException;
+    void setEmails(String state, Email[] emails) throws CacheWriteException;
 
-    void addEmails(String account, String state, Email[] emails) throws CacheWriteException, CacheConflictException;
+    void addEmails(String state, Email[] emails) throws CacheWriteException, CacheConflictException;
 
-    void updateEmails(String account, Update<Email> emailUpdate, String[] updatedProperties) throws CacheWriteException, CacheConflictException;
+    void updateEmails(Update<Email> emailUpdate, String[] updatedProperties) throws CacheWriteException, CacheConflictException;
 
 
     //Identity
-    void setIdentities(String account, String state, Identity[] identities) throws CacheWriteException;
+    void setIdentities(String state, Identity[] identities) throws CacheWriteException;
 
 
-    void updateIdentities(String account, Update<Identity> identityUpdate) throws CacheWriteException, CacheConflictException;
+    void updateIdentities(Update<Identity> identityUpdate) throws CacheWriteException, CacheConflictException;
 
     //Queries
 
-    void setQueryResult(String account, String query, String queryState, QueryResultItem[] items) throws CacheWriteException;
+    void setQueryResult(String query, String queryState, QueryResultItem[] items) throws CacheWriteException;
 
-    void updateQueryResults(String account, String query, QueryUpdate<Email, QueryResultItem> update) throws CacheWriteException, CacheConflictException;
+    void updateQueryResults(String query, QueryUpdate<Email, QueryResultItem> update) throws CacheWriteException, CacheConflictException;
 
-    Missing getMissing(String account, String query) throws CacheReadException;
+    Missing getMissing(String query) throws CacheReadException;
 }
 

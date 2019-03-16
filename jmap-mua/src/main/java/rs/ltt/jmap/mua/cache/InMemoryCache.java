@@ -42,18 +42,18 @@ public class InMemoryCache implements Cache {
     private String identityState = null;
 
     @Override
-    public String getIdentityState(String username) {
+    public String getIdentityState() {
         return identityState;
     }
 
     @Override
-    public String getMailboxState(String account) {
+    public String getMailboxState() {
         return mailboxState;
     }
 
 
     @Override
-    public QueryStateWrapper getQueryState(String username, String query) {
+    public QueryStateWrapper getQueryState(String query) {
         synchronized (this.queryResults) {
             final String mailboxState = this.mailboxState;
             final String threadState = this.threadState;
@@ -65,12 +65,12 @@ public class InMemoryCache implements Cache {
 
     @NonNullDecl
     @Override
-    public ObjectsState getObjectsState(String username) {
+    public ObjectsState getObjectsState() {
         return new ObjectsState(mailboxState, threadState, emailState);
     }
 
     @Override
-    public void setMailboxes(String account, String state, Mailbox[] mailboxes) {
+    public void setMailboxes(String state, Mailbox[] mailboxes) {
         synchronized (this.mailboxes) {
             this.mailboxes.clear();
             for (Mailbox mailbox : mailboxes) {
@@ -82,7 +82,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void updateMailboxes(String account, Update<Mailbox> mailboxUpdate, final String[] updatedProperties) throws CacheWriteException {
+    public void updateMailboxes(Update<Mailbox> mailboxUpdate, final String[] updatedProperties) throws CacheWriteException {
         synchronized (this.mailboxes) {
             for (Mailbox mailbox : mailboxUpdate.getCreated()) {
                 this.mailboxes.put(mailbox.getId(), mailbox);
@@ -112,7 +112,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public Collection<Mailbox> getSpecialMailboxes(String account) throws NotSynchronizedException {
+    public Collection<Mailbox> getSpecialMailboxes() throws NotSynchronizedException {
         synchronized (this.mailboxes) {
             if (this.mailboxState == null) {
                 throw new NotSynchronizedException("Mailboxes have not been synchronized yet. Run refresh() first.");
@@ -122,7 +122,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void setThreads(final String account, final String state, Thread[] threads) {
+    public void setThreads(final String state, Thread[] threads) {
         synchronized (this.threads) {
             this.threads.clear();
             for (Thread thread : threads) {
@@ -133,7 +133,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void addThreads(String account, String state, Thread[] threads) throws CacheConflictException {
+    public void addThreads(final String state, final Thread[] threads) throws CacheConflictException {
         synchronized (this.threads) {
             if (state == null || !state.equals(this.threadState)) {
                 throw new CacheConflictException(String.format("Trying to add threads with an outdated state. Run update first. Cached state=%s. Your state=%s", this.threadState, state));
@@ -145,7 +145,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void updateThreads(final String account, Update<Thread> threadUpdate) throws CacheWriteException {
+    public void updateThreads(Update<Thread> threadUpdate) throws CacheWriteException {
         synchronized (this.threads) {
             for (Thread thread : threadUpdate.getCreated()) {
                 if (threads.containsKey(thread.getId())) {
@@ -168,7 +168,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void setEmails(String account, String state, Email[] emails) {
+    public void setEmails(String state, Email[] emails) {
         synchronized (this.emails) {
             this.emails.clear();
             for (Email email : emails) {
@@ -179,7 +179,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void addEmails(String account, String state, Email[] emails) throws CacheConflictException {
+    public void addEmails(String state, Email[] emails) throws CacheConflictException {
         synchronized (this.emails) {
             if (state == null || !state.equals(this.emailState)) {
                 throw new CacheConflictException(String.format("Trying to add threads with an outdated state. Run update first. Cached state=%s. Your state=%s", this.threadState, state));
@@ -191,7 +191,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void updateEmails(String account, Update<Email> emailUpdate, String[] updatedProperties) throws CacheWriteException {
+    public void updateEmails(Update<Email> emailUpdate, String[] updatedProperties) throws CacheWriteException {
         synchronized (this.emails) {
             for (Email email : emailUpdate.getCreated()) {
                 this.emails.put(email.getId(), email);
@@ -217,7 +217,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void setIdentities(final String account, final String state, final Identity[] identities) {
+    public void setIdentities(final String state, final Identity[] identities) {
         synchronized (this.identities) {
             this.identities.clear();
             for(Identity identity : identities) {
@@ -232,7 +232,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void updateIdentities(String account, Update<Identity> identityUpdate) throws CacheWriteException {
+    public void updateIdentities(Update<Identity> identityUpdate) throws CacheWriteException {
          synchronized (this.identities) {
             for (Identity identity : identityUpdate.getCreated()) {
                 if (this.identities.containsKey(identity.getId())) {
@@ -255,14 +255,14 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void setQueryResult(String account, String query, String queryState, QueryResultItem[] items) {
+    public void setQueryResult(String query, String queryState, QueryResultItem[] items) {
         synchronized (this.queryResults) {
             this.queryResults.put(query, new QueryResult(queryState, items));
         }
     }
 
     @Override
-    public void updateQueryResults(String account, String query, QueryUpdate<Email, QueryResultItem> update) throws CacheWriteException, CacheConflictException {
+    public void updateQueryResults(String query, QueryUpdate<Email, QueryResultItem> update) throws CacheWriteException, CacheConflictException {
         synchronized (this.queryResults) {
             final QueryResult queryResult = this.queryResults.get(query);
             if (queryResult == null) {
@@ -285,7 +285,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public Missing getMissing(String account, final String query) throws CacheReadException {
+    public Missing getMissing(final String query) throws CacheReadException {
         final List<String> threadIds = new ArrayList<>();
         synchronized (this.queryResults) {
             final QueryResult queryResult = this.queryResults.get(query);
