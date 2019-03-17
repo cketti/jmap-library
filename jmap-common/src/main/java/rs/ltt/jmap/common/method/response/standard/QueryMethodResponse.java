@@ -17,16 +17,24 @@
 package rs.ltt.jmap.common.method.response.standard;
 
 import com.google.common.base.MoreObjects;
+import lombok.Getter;
+import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
+import rs.ltt.jmap.common.entity.TypedState;
 import rs.ltt.jmap.common.method.MethodResponse;
 
-public abstract class QueryMethodResponse implements MethodResponse {
+@Getter
+public abstract class QueryMethodResponse<T extends AbstractIdentifiableEntity> implements MethodResponse {
     private String accountId;
     private String queryState;
     private boolean canCalculateChanges;
-    private int position;
+    private Integer position;
     private String[] ids;
-    private int total;
-    private int limit;
+    private Integer total;
+    private Integer limit;
+
+    public TypedState<T> getTypedQueryState() {
+        return TypedState.of(queryState);
+    }
 
     @Override
     public String toString() {
@@ -39,33 +47,5 @@ public abstract class QueryMethodResponse implements MethodResponse {
                 .add("total", total)
                 .add("limit", limit)
                 .toString();
-    }
-
-    public String getAccountId() {
-        return accountId;
-    }
-
-    public String getQueryState() {
-        return queryState;
-    }
-
-    public boolean isCanCalculateChanges() {
-        return canCalculateChanges;
-    }
-
-    public int getPosition() {
-        return position;
-    }
-
-    public String[] getIds() {
-        return ids;
-    }
-
-    public int getTotal() {
-        return total;
-    }
-
-    public int getLimit() {
-        return limit;
     }
 }

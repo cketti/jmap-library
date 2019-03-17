@@ -14,12 +14,26 @@
  *
  */
 
-package rs.ltt.jmap.common.method.response.email;
+package rs.ltt.jmap.common.entity;
 
-import rs.ltt.jmap.annotation.JmapMethod;
-import rs.ltt.jmap.common.entity.Email;
-import rs.ltt.jmap.common.method.response.standard.QueryMethodResponse;
+public class TypedState<T extends AbstractIdentifiableEntity> {
 
-@JmapMethod("Email/query")
-public class QueryEmailMethodResponse extends QueryMethodResponse<Email> {
+    private final String state;
+
+    private TypedState(String state) {
+        this.state = state;
+    }
+
+    public String getState() {
+        return this.state;
+    }
+
+    public static <T extends AbstractIdentifiableEntity> TypedState<T> of(String state) {
+        return new TypedState<>(state);
+    }
+
+    @Override
+    public String toString() {
+        return state;
+    }
 }

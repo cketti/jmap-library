@@ -18,6 +18,7 @@ package rs.ltt.jmap.mua.cache;
 
 import com.google.common.base.MoreObjects;
 import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
+import rs.ltt.jmap.common.entity.TypedState;
 import rs.ltt.jmap.common.method.response.standard.ChangesMethodResponse;
 import rs.ltt.jmap.common.method.response.standard.GetMethodResponse;
 
@@ -27,7 +28,7 @@ public class Update<T extends AbstractIdentifiableEntity> extends AbstractUpdate
     private final T[] updated;
     private final String[] destroyed;
 
-    private Update(String oldState, String newState, T[] created, T[] updated, String[] destroyed, boolean hasMore) {
+    private Update(TypedState<T> oldState, TypedState<T> newState, T[] created, T[] updated, String[] destroyed, boolean hasMore) {
         super(oldState, newState, hasMore);
         this.created = created;
         this.updated = updated;
@@ -35,8 +36,8 @@ public class Update<T extends AbstractIdentifiableEntity> extends AbstractUpdate
     }
 
     public static <T extends AbstractIdentifiableEntity> Update<T> of(ChangesMethodResponse<T> changesMethodResponse, GetMethodResponse<T> createdMethodResponse, GetMethodResponse<T> updatedMethodResponse) {
-        return new Update<T>(changesMethodResponse.getOldState(),
-                changesMethodResponse.getNewState(),
+        return new Update<T>(changesMethodResponse.getTypedOldState(),
+                changesMethodResponse.getTypedNewState(),
                 createdMethodResponse.getList(),
                 updatedMethodResponse.getList(),
                 changesMethodResponse.getDestroyed(),
@@ -58,8 +59,8 @@ public class Update<T extends AbstractIdentifiableEntity> extends AbstractUpdate
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("oldState", getOldState())
-                .add("newState", getNewState())
+                .add("oldTypedState", getOldTypedState())
+                .add("newTypedState", getNewTypedState())
                 .add("created", created)
                 .add("updated", updated)
                 .add("destroyed", destroyed)

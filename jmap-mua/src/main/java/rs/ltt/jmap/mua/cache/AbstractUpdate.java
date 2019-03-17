@@ -17,24 +17,25 @@
 package rs.ltt.jmap.mua.cache;
 
 import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
+import rs.ltt.jmap.common.entity.TypedState;
 
 public abstract class AbstractUpdate<T extends AbstractIdentifiableEntity> {
 
-    private final String oldState;
-    private final String newState;
+    private final TypedState<T> oldState;
+    private final TypedState<T> newState;
     private final boolean hasMore;
 
-    protected AbstractUpdate(String oldState, String newState, boolean hasMore) {
+    protected AbstractUpdate(TypedState<T> oldState, TypedState<T> newState, boolean hasMore) {
         this.oldState = oldState;
         this.newState = newState;
         this.hasMore = hasMore;
     }
 
-    public String getOldState() {
+    public TypedState<T> getOldTypedState() {
         return oldState;
     }
 
-    public String getNewState() {
+    public TypedState<T> getNewTypedState() {
         return newState;
     }
 

@@ -134,7 +134,7 @@ public class Mua {
                 try {
                     final GetIdentityMethodResponse response = responseFuture.get().getMain(GetIdentityMethodResponse.class);
                     final Identity[] identities = response.getList();
-                    cache.setIdentities(response.getState(), identities);
+                    cache.setIdentities(response.getTypedState(), identities);
                     settableFuture.set(Status.of(identities.length > 0));
                 } catch (Exception e) {
                     settableFuture.setException(extractException(e));
@@ -219,7 +219,7 @@ public class Mua {
                 try {
                     GetMailboxMethodResponse response = getMailboxMethodResponsesFuture.get().getMain(GetMailboxMethodResponse.class);
                     Mailbox[] mailboxes = response.getList();
-                    cache.setMailboxes(response.getState(), mailboxes);
+                    cache.setMailboxes(response.getTypedState(), mailboxes);
                     settableFuture.set(Status.of(mailboxes.length > 0));
                 } catch (InterruptedException | ExecutionException | CacheWriteException e) {
                     settableFuture.setException(extractException(e));
@@ -660,11 +660,14 @@ public class Mua {
             futuresListBuilder.add(loadMailboxes(multiCall));
         }
 
-        if (objectsState.threadState != null) {
-            futuresListBuilder.add(updateThreads(objectsState.threadState, multiCall));
-        }
+        //update to emails should happen before update to threads
+        //when mua queries threads the corresponding emails should already be in the cache
+
         if (objectsState.emailState != null) {
             futuresListBuilder.add(updateEmails(objectsState.emailState, multiCall));
+        }
+        if (objectsState.threadState != null) {
+            futuresListBuilder.add(updateThreads(objectsState.threadState, multiCall));
         }
         return futuresListBuilder.build();
     }
@@ -781,10 +784,14 @@ public class Mua {
 
                     final QueryUpdate<Email, QueryResultItem> queryUpdate = QueryUpdate.of(queryChangesResponse, added);
 
-                    cache.updateQueryResults(query.toQueryString(), queryUpdate);
+                    //processing order is:
+                    //  1) update Objects (Email, Threads, and Mailboxes)
+                    //  2) store query results; If query cache sees an outdated email state it will fail
 
                     Status piggybackStatus = transform(piggyBackedFuturesList).get(); //wait for updates before attempting to fetch
                     Status queryUpdateStatus = Status.of(queryUpdate);
+
+                    cache.updateQueryResults(query.toQueryString(), queryUpdate, getThreadIdsResponse.getTypedState());
 
                     if (piggybackStatus == Status.UNCHANGED && queryUpdateStatus == Status.UNCHANGED) {
                         settableFuture.set(Status.UNCHANGED);
@@ -845,18 +852,22 @@ public class Mua {
 
                     QueryResultItem[] queryResultItems = QueryResultUtils.of(queryResponse, getThreadIdsResponse);
 
-                    cache.setQueryResult(query.toQueryString(), queryResponse.getQueryState(), queryResultItems);
+                    //processing order is:
+                    //  1) update Objects (Email, Threads, and Mailboxes)
+                    //  2) if getThread or getEmails calls where made process those results
+                    //  3) store query results; If query cache sees an outdated email state it will fail
+                    transform(piggyBackedFuturesList).get();
 
                     if (getThreadsResponsesFutureOptional.isPresent()) {
                         GetThreadMethodResponse getThreadsResponse = getThreadsResponsesFutureOptional.get().get().getMain(GetThreadMethodResponse.class);
-                        cache.setThreads(getThreadsResponse.getState(), getThreadsResponse.getList());
+                        cache.setThreads(getThreadsResponse.getTypedState(), getThreadsResponse.getList());
                     }
                     if (getEmailResponsesFutureOptional.isPresent()) {
                         GetEmailMethodResponse getEmailResponse = getEmailResponsesFutureOptional.get().get().getMain(GetEmailMethodResponse.class);
-                        cache.setEmails(getEmailResponse.getState(), getEmailResponse.getList());
+                        cache.setEmails(getEmailResponse.getTypedState(), getEmailResponse.getList());
                     }
 
-                    transform(piggyBackedFuturesList).get();
+                    cache.setQueryResult(query.toQueryString(), queryResponse.getTypedQueryState(), queryResultItems, getThreadIdsResponse.getTypedState());
 
                     if (getEmailResponsesFutureOptional.isPresent() && getEmailResponsesFutureOptional.isPresent()) {
                         settableFuture.set(Status.UPDATED);
@@ -913,10 +924,10 @@ public class Mua {
                     }
 
                     GetThreadMethodResponse getThreadMethodResponse = getThreadsResponsesFuture.get().getMain(GetThreadMethodResponse.class);
-                    cache.addThreads(getThreadMethodResponse.getState(), getThreadMethodResponse.getList());
+                    cache.addThreads(getThreadMethodResponse.getTypedState(), getThreadMethodResponse.getList());
 
                     GetEmailMethodResponse getEmailMethodResponse = getEmailsResponsesFuture.get().getMain(GetEmailMethodResponse.class);
-                    cache.addEmails(getEmailMethodResponse.getState(), getEmailMethodResponse.getList());
+                    cache.addEmails(getEmailMethodResponse.getTypedState(), getEmailMethodResponse.getList());
 
                     settableFuture.set(Status.UPDATED);
 

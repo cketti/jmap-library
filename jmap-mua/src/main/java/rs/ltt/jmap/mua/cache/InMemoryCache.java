@@ -20,8 +20,8 @@ import com.google.common.collect.ImmutableList;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rs.ltt.jmap.common.entity.*;
 import rs.ltt.jmap.common.entity.Thread;
+import rs.ltt.jmap.common.entity.*;
 import rs.ltt.jmap.mua.entity.QueryResultItem;
 
 import java.lang.reflect.Field;
@@ -70,13 +70,13 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void setMailboxes(String state, Mailbox[] mailboxes) {
+    public void setMailboxes(TypedState<Mailbox> state, Mailbox[] mailboxes) {
         synchronized (this.mailboxes) {
             this.mailboxes.clear();
             for (Mailbox mailbox : mailboxes) {
                 this.mailboxes.put(mailbox.getId(), mailbox);
             }
-            this.mailboxState = state;
+            this.mailboxState = state.getState();
         }
 
     }
@@ -107,7 +107,7 @@ public class InMemoryCache implements Cache {
             for (String id : mailboxUpdate.getDestroyed()) {
                 this.mailboxes.remove(id);
             }
-            this.mailboxState = mailboxUpdate.getNewState();
+            this.mailboxState = mailboxUpdate.getNewTypedState().getState();
         }
     }
 
@@ -122,21 +122,21 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void setThreads(final String state, Thread[] threads) {
+    public void setThreads(final TypedState<Thread> typedState, Thread[] threads) {
         synchronized (this.threads) {
             this.threads.clear();
             for (Thread thread : threads) {
                 this.threads.put(thread.getId(), thread);
             }
-            this.threadState = state;
+            this.threadState = typedState.getState();
         }
     }
 
     @Override
-    public void addThreads(final String state, final Thread[] threads) throws CacheConflictException {
+    public void addThreads(final TypedState<Thread> typedState, final Thread[] threads) throws CacheConflictException {
         synchronized (this.threads) {
-            if (state == null || !state.equals(this.threadState)) {
-                throw new CacheConflictException(String.format("Trying to add threads with an outdated state. Run update first. Cached state=%s. Your state=%s", this.threadState, state));
+            if (typedState.getState() == null || !typedState.getState().equals(this.threadState)) {
+                throw new CacheConflictException(String.format("Trying to add threads with an outdated state. Run update first. Cached state=%s. Your state=%s", this.threadState, typedState.getState()));
             }
             for (Thread thread : threads) {
                 this.threads.put(thread.getId(), thread);
@@ -163,26 +163,26 @@ public class InMemoryCache implements Cache {
             for (String id : threadUpdate.getDestroyed()) {
                 this.threads.remove(id);
             }
-            this.threadState = threadUpdate.getNewState();
+            this.threadState = threadUpdate.getNewTypedState().getState();
         }
     }
 
     @Override
-    public void setEmails(String state, Email[] emails) {
+    public void setEmails(TypedState<Email> typedState, Email[] emails) {
         synchronized (this.emails) {
             this.emails.clear();
             for (Email email : emails) {
                 this.emails.put(email.getId(), email);
             }
-            this.emailState = state;
+            this.emailState = typedState.getState();
         }
     }
 
     @Override
-    public void addEmails(String state, Email[] emails) throws CacheConflictException {
+    public void addEmails(TypedState<Email> typedState, Email[] emails) throws CacheConflictException {
         synchronized (this.emails) {
-            if (state == null || !state.equals(this.emailState)) {
-                throw new CacheConflictException(String.format("Trying to add threads with an outdated state. Run update first. Cached state=%s. Your state=%s", this.threadState, state));
+            if (typedState.getState() == null || !typedState.getState().equals(this.emailState)) {
+                throw new CacheConflictException(String.format("Trying to add emails with an outdated state. Run update first. Cached state=%s. Your state=%s", this.emailState, typedState.getState()));
             }
             for (Email email : emails) {
                 this.emails.put(email.getId(), email);
@@ -212,28 +212,29 @@ public class InMemoryCache implements Cache {
             for (String id : emailUpdate.getDestroyed()) {
                 this.emails.remove(id);
             }
-            this.emailState = emailUpdate.getNewState();
+            this.emailState = emailUpdate.getNewTypedState().getState();
         }
     }
 
     @Override
-    public void setIdentities(final String state, final Identity[] identities) {
+    public void setIdentities(final TypedState<Identity> typedState, final Identity[] identities) {
         synchronized (this.identities) {
             this.identities.clear();
-            for(Identity identity : identities) {
+            for (Identity identity : identities) {
                 this.identities.put(identity.getId(), identity);
             }
-            if (state == null) {
+            if (typedState.getState() == null) {
                 LOGGER.warn("Identity state was null");
+            } else {
+                this.identityState = typedState.getState();
             }
-            this.identityState = state;
         }
 
     }
 
     @Override
     public void updateIdentities(Update<Identity> identityUpdate) throws CacheWriteException {
-         synchronized (this.identities) {
+        synchronized (this.identities) {
             for (Identity identity : identityUpdate.getCreated()) {
                 if (this.identities.containsKey(identity.getId())) {
                     throw new CacheWriteException(String.format("Unable to create Identity(%s). Identity already exists", identity.getId()));
@@ -250,37 +251,43 @@ public class InMemoryCache implements Cache {
             for (String id : identityUpdate.getDestroyed()) {
                 this.identities.remove(id);
             }
-            this.identityState = identityUpdate.getNewState();
+            this.identityState = identityUpdate.getNewTypedState().getState();
         }
     }
 
     @Override
-    public void setQueryResult(String query, String queryState, QueryResultItem[] items) {
+    public void setQueryResult(String query, TypedState<Email> queryState, QueryResultItem[] items, TypedState<Email> emailState) {
         synchronized (this.queryResults) {
-            this.queryResults.put(query, new QueryResult(queryState, items));
+            if (emailState.getState() == null || !emailState.getState().equals(this.emailState)) {
+                throw new CacheConflictException(String.format("Email state must match when updating query results. Cached state=%s. Your state=%s", this.emailState, emailState.getState()));
+            }
+            this.queryResults.put(query, new QueryResult(queryState.getState(), items));
         }
     }
 
     @Override
-    public void updateQueryResults(String query, QueryUpdate<Email, QueryResultItem> update) throws CacheWriteException, CacheConflictException {
+    public void updateQueryResults(String query, QueryUpdate<Email, QueryResultItem> update, TypedState<Email> emailState) throws CacheWriteException, CacheConflictException {
         synchronized (this.queryResults) {
             final QueryResult queryResult = this.queryResults.get(query);
             if (queryResult == null) {
                 throw new CacheWriteException("Unable to update query. Can not find cached version");
             }
-            if (update.getOldState() == null || !update.getOldState().equals(queryResult.queryState)) {
-                throw new CacheConflictException(String.format("OldState (%s) did not match our expectation ",update.getOldState()));
+            if (emailState.getState() == null || !emailState.getState().equals(this.emailState)) {
+                throw new CacheConflictException(String.format("Email state must match when updating query results. Cached state=%s. Your state=%s", this.emailState, emailState.getState()));
+            }
+            if (update.getOldTypedState().getState() == null || !update.getOldTypedState().getState().equals(queryResult.queryState)) {
+                throw new CacheConflictException(String.format("OldState (%s) did not match our expectation ", update.getOldTypedState().getState()));
             }
             for (String removed : update.getRemoved()) {
-                LOGGER.info("no removing id "+removed);
+                LOGGER.info("no removing id " + removed);
                 queryResult.remove(removed);
             }
             for (AddedItem<QueryResultItem> addedItem : update.getAdded()) {
                 //TODO it is probably save to just not add an item that exceeds the range (position > length) but this indicates a broken uper layer
-                LOGGER.info("now adding "+addedItem.getItem().getEmailId()+" on index "+addedItem.getIndex());
+                LOGGER.info("now adding " + addedItem.getItem().getEmailId() + " on index " + addedItem.getIndex());
                 queryResult.items.add(addedItem.getIndex(), addedItem.getItem());
             }
-            queryResult.queryState = update.getNewState();
+            queryResult.queryState = update.getNewTypedState().getState();
         }
     }
 

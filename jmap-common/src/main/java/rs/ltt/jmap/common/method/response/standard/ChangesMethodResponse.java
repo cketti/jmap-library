@@ -17,10 +17,13 @@
 package rs.ltt.jmap.common.method.response.standard;
 
 import com.google.common.base.MoreObjects;
+import lombok.Getter;
 import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
+import rs.ltt.jmap.common.entity.TypedState;
 import rs.ltt.jmap.common.method.MethodResponse;
 
 
+@Getter
 public abstract class ChangesMethodResponse<T extends AbstractIdentifiableEntity> implements MethodResponse {
 
     private String accountId;
@@ -31,32 +34,12 @@ public abstract class ChangesMethodResponse<T extends AbstractIdentifiableEntity
     private String[] updated;
     private String[] destroyed;
 
-    public String getAccountId() {
-        return accountId;
+    public TypedState<T> getTypedOldState() {
+        return TypedState.of(this.oldState);
     }
 
-    public String getOldState() {
-        return oldState;
-    }
-
-    public String getNewState() {
-        return newState;
-    }
-
-    public boolean isHasMoreChanges() {
-        return hasMoreChanges;
-    }
-
-    public String[] getCreated() {
-        return created;
-    }
-
-    public String[] getUpdated() {
-        return updated;
-    }
-
-    public String[] getDestroyed() {
-        return destroyed;
+    public TypedState<T> getTypedNewState() {
+        return TypedState.of(this.newState);
     }
 
     @Override

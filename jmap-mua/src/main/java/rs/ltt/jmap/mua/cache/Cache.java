@@ -22,6 +22,7 @@ import rs.ltt.jmap.common.entity.Thread;
 import rs.ltt.jmap.common.entity.*;
 import rs.ltt.jmap.mua.entity.QueryResultItem;
 
+import java.lang.reflect.Type;
 import java.util.Collection;
 
 public interface Cache {
@@ -37,7 +38,7 @@ public interface Cache {
     @NonNullDecl
     ObjectsState getObjectsState();
 
-    void setMailboxes(String state, Mailbox[] mailboxes) throws CacheWriteException;
+    void setMailboxes(TypedState<Mailbox> state, Mailbox[] mailboxes) throws CacheWriteException;
 
     void updateMailboxes(Update<Mailbox> mailboxUpdate, String[] updatedProperties) throws CacheWriteException, CacheConflictException;
 
@@ -45,32 +46,32 @@ public interface Cache {
 
     //Threads
     //we probably don’t need a getThreads() method since we always access using the Queries
-    void setThreads(String state, Thread[] threads);
+    void setThreads(TypedState<Thread> state, Thread[] threads);
 
-    void addThreads(String state, Thread[] threads) throws CacheWriteException, CacheConflictException;
+    void addThreads(TypedState<Thread> state, Thread[] threads) throws CacheWriteException, CacheConflictException;
 
     void updateThreads(Update<Thread> threadUpdate) throws CacheWriteException, CacheConflictException;
 
     //Email
     //we probably don’t need a getEmail() method since we always access using the Queries
-    void setEmails(String state, Email[] emails) throws CacheWriteException;
+    void setEmails(TypedState<Email> state, Email[] emails) throws CacheWriteException;
 
-    void addEmails(String state, Email[] emails) throws CacheWriteException, CacheConflictException;
+    void addEmails(TypedState<Email> state, Email[] emails) throws CacheWriteException, CacheConflictException;
 
     void updateEmails(Update<Email> emailUpdate, String[] updatedProperties) throws CacheWriteException, CacheConflictException;
 
 
     //Identity
-    void setIdentities(String state, Identity[] identities) throws CacheWriteException;
+    void setIdentities(TypedState<Identity> state, Identity[] identities) throws CacheWriteException;
 
 
     void updateIdentities(Update<Identity> identityUpdate) throws CacheWriteException, CacheConflictException;
 
     //Queries
 
-    void setQueryResult(String query, String queryState, QueryResultItem[] items) throws CacheWriteException;
+    void setQueryResult(String query, TypedState<Email> queryState, QueryResultItem[] items, TypedState<Email> emailState) throws CacheWriteException;
 
-    void updateQueryResults(String query, QueryUpdate<Email, QueryResultItem> update) throws CacheWriteException, CacheConflictException;
+    void updateQueryResults(String query, QueryUpdate<Email, QueryResultItem> update, TypedState<Email> emailState) throws CacheWriteException, CacheConflictException;
 
     Missing getMissing(String query) throws CacheReadException;
 }

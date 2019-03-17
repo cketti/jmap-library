@@ -19,6 +19,7 @@ package rs.ltt.jmap.mua.cache;
 import com.google.common.base.MoreObjects;
 import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
 import rs.ltt.jmap.common.entity.AddedItem;
+import rs.ltt.jmap.common.entity.TypedState;
 import rs.ltt.jmap.common.method.response.standard.QueryChangesMethodResponse;
 
 import java.util.List;
@@ -30,18 +31,18 @@ public class QueryUpdate<T extends AbstractIdentifiableEntity, U> extends Abstra
     private final List<AddedItem<U>> added;
 
 
-    protected QueryUpdate(String oldState, String newState, String[] removed, List<AddedItem<U>> added) {
+    private QueryUpdate(TypedState<T> oldState, TypedState<T> newState, String[] removed, List<AddedItem<U>> added) {
         super(oldState, newState, false);
         this.removed = removed;
         this.added = added;
     }
 
     public static <T extends AbstractIdentifiableEntity, U> QueryUpdate<T, U> of(QueryChangesMethodResponse<T> queryChangesMethodResponse, List<AddedItem<U>> added) {
-        return new QueryUpdate<>(queryChangesMethodResponse.getOldQueryState(), queryChangesMethodResponse.getNewQueryState(), queryChangesMethodResponse.getRemoved(), added);
+        return new QueryUpdate<>(queryChangesMethodResponse.getOldTypedQueryState(), queryChangesMethodResponse.getNewTypedQueryState(), queryChangesMethodResponse.getRemoved(), added);
     }
 
     public static <T extends AbstractIdentifiableEntity> QueryUpdate<T, String> of(QueryChangesMethodResponse<T> queryChangesMethodResponse) {
-        return new QueryUpdate<>(queryChangesMethodResponse.getOldQueryState(), queryChangesMethodResponse.getNewQueryState(), queryChangesMethodResponse.getRemoved(), queryChangesMethodResponse.getAdded());
+        return new QueryUpdate<>(queryChangesMethodResponse.getOldTypedQueryState(), queryChangesMethodResponse.getNewTypedQueryState(), queryChangesMethodResponse.getRemoved(), queryChangesMethodResponse.getAdded());
     }
 
     public String[] getRemoved() {

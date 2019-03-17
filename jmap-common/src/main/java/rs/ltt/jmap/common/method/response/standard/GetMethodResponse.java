@@ -17,9 +17,12 @@
 package rs.ltt.jmap.common.method.response.standard;
 
 import com.google.common.base.MoreObjects;
+import lombok.Getter;
 import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
+import rs.ltt.jmap.common.entity.TypedState;
 import rs.ltt.jmap.common.method.MethodResponse;
 
+@Getter
 public abstract class GetMethodResponse<T extends AbstractIdentifiableEntity> implements MethodResponse {
 
     protected String accountId;
@@ -39,19 +42,7 @@ public abstract class GetMethodResponse<T extends AbstractIdentifiableEntity> im
                 .toString();
     }
 
-    public String getAccountId() {
-        return accountId;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public String[] getNotFound() {
-        return notFound;
-    }
-
-    public T[] getList() {
-        return list;
+    public TypedState<T> getTypedState() {
+        return TypedState.of(this.state);
     }
 }

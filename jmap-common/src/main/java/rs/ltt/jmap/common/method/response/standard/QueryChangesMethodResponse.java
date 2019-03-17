@@ -18,13 +18,15 @@ package rs.ltt.jmap.common.method.response.standard;
 
 import com.google.common.base.MoreObjects;
 import lombok.Getter;
+import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
 import rs.ltt.jmap.common.entity.AddedItem;
+import rs.ltt.jmap.common.entity.TypedState;
 import rs.ltt.jmap.common.method.MethodResponse;
 
 import java.util.List;
 
 @Getter
-public abstract class QueryChangesMethodResponse<T> implements MethodResponse {
+public abstract class QueryChangesMethodResponse<T extends AbstractIdentifiableEntity> implements MethodResponse {
 
     private String accountId;
     private String oldQueryState;
@@ -32,6 +34,15 @@ public abstract class QueryChangesMethodResponse<T> implements MethodResponse {
     private int total;
     private String[] removed;
     private List<AddedItem<String>> added;
+
+
+    public TypedState<T> getOldTypedQueryState() {
+        return TypedState.of(oldQueryState);
+    }
+
+    public TypedState<T> getNewTypedQueryState() {
+        return TypedState.of(newQueryState);
+    }
 
     @Override
     public String toString() {
