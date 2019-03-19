@@ -27,10 +27,18 @@ import java.net.URL;
 
 public class SessionFileCache implements SessionCache {
 
+    private final File directory;
+
     private final GsonBuilder gsonBuilder = new GsonBuilder();
 
     public SessionFileCache() {
         JmapAdapters.register(this.gsonBuilder);
+        this.directory = null;
+    }
+
+    public SessionFileCache(File directory) {
+        JmapAdapters.register(this.gsonBuilder);
+        this.directory = directory;
     }
 
     @Override
@@ -38,7 +46,13 @@ public class SessionFileCache implements SessionCache {
         Gson gson = this.gsonBuilder.create();
         try {
             final String filename = getFilename(username, sessionResource);
-            final FileWriter fileWriter = new FileWriter(new File(filename));
+            final File file;
+            if (directory == null) {
+                file = new File(filename);
+            } else {
+                file = new File(directory, filename);
+            }
+            final FileWriter fileWriter = new FileWriter(file);
             gson.toJson(session, fileWriter);
             fileWriter.flush();
             fileWriter.close();
