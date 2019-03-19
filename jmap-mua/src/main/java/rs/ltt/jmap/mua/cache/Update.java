@@ -70,7 +70,8 @@ public class Update<T extends AbstractIdentifiableEntity> extends AbstractUpdate
 
     @Override
     public boolean hasChanges() {
-        return created.length + updated.length + destroyed.length > 0;
+        final boolean modifiedItems = created.length + updated.length + destroyed.length > 0;
+        return modifiedItems || hasStateChange();
     }
 
 }

@@ -16,6 +16,8 @@
 
 package rs.ltt.jmap.common.entity;
 
+import com.google.common.base.Objects;
+
 public class TypedState<T extends AbstractIdentifiableEntity> {
 
     private final String state;
@@ -35,5 +37,18 @@ public class TypedState<T extends AbstractIdentifiableEntity> {
     @Override
     public String toString() {
         return state;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TypedState<?> that = (TypedState<?>) o;
+        return Objects.equal(state, that.state);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(state);
     }
 }

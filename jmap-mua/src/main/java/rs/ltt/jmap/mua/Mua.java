@@ -157,7 +157,9 @@ public class Mua {
                     GetIdentityMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetIdentityMethodResponse.class);
                     GetIdentityMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetIdentityMethodResponse.class);
                     final Update<Identity> update = Update.of(changesResponse, createdResponse, updatedResponse);
-                    cache.updateIdentities(update);
+                    if (update.hasChanges()) {
+                        cache.updateIdentities(update);
+                    }
                     settableFuture.set(Status.of(update));
                 } catch (Exception e) {
                     settableFuture.setException(extractException(e));
@@ -243,7 +245,9 @@ public class Mua {
                     final GetMailboxMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetMailboxMethodResponse.class);
                     final GetMailboxMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetMailboxMethodResponse.class);
                     final Update<Mailbox> update = Update.of(changesResponse, createdResponse, updatedResponse);
-                    cache.updateMailboxes(update, changesResponse.getUpdatedProperties());
+                    if (update.hasChanges()) {
+                        cache.updateMailboxes(update, changesResponse.getUpdatedProperties());
+                    }
                     settableFuture.set(Status.of(update));
                 } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
                     settableFuture.setException(extractException(e));
@@ -701,7 +705,9 @@ public class Mua {
                     final GetEmailMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetEmailMethodResponse.class);
                     final GetEmailMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetEmailMethodResponse.class);
                     final Update<Email> update = Update.of(changesResponse, createdResponse, updatedResponse);
-                    cache.updateEmails(update, Email.MUTABLE_PROPERTIES);
+                    if (update.hasChanges()) {
+                        cache.updateEmails(update, Email.MUTABLE_PROPERTIES);
+                    }
                     settableFuture.set(Status.of(update));
                 } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
                     settableFuture.setException(extractException(e));
@@ -723,7 +729,9 @@ public class Mua {
                     final GetThreadMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetThreadMethodResponse.class);
                     final GetThreadMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetThreadMethodResponse.class);
                     final Update<Thread> update = Update.of(changesResponse, createdResponse, updatedResponse);
-                    cache.updateThreads(update);
+                    if (update.hasChanges()) {
+                        cache.updateThreads(update);
+                    }
                     settableFuture.set(Status.of(update));
                 } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
                     settableFuture.setException(extractException(e));
@@ -781,6 +789,11 @@ public class Mua {
         Preconditions.checkNotNull(query, "Query can not be null");
         Preconditions.checkNotNull(afterEmailId, "afterEmailId can not be null");
         Preconditions.checkNotNull(queryStateWrapper, "QueryStateWrapper can not be null when paging");
+
+
+        //TODO: this currently means we can’t page in queries that aren’t cacheble (=don’t have a queryState)
+        //TODO: we should probably get rid of that check and instead simply don’t do the update call
+        //TODO: likewise we probably need to be able to ignore a canNotCalculate Changes error on the update response
         if (queryStateWrapper.queryState == null) {
             throw new InconsistentQueryStateException("QueryStateWrapper needs queryState for paging");
         }
@@ -810,6 +823,7 @@ public class Mua {
                     //  2) store new items
 
                     //TODO status=has_more should probably throw; but cache will eventually throw anyway
+                    //TODO as mentioned above we probably need to ignore canNotCalculate changes errors and the like otherwise we won’t be able to page through queries that aren’t cachable
                     queryRefreshFuture.get();
 
                     cache.addQueryResult(query.toQueryString(), queryResult);
@@ -863,7 +877,9 @@ public class Mua {
                     Status piggybackStatus = transform(piggyBackedFuturesList).get(); //wait for updates before attempting to fetch
                     Status queryUpdateStatus = Status.of(queryUpdate);
 
-                    cache.updateQueryResults(query.toQueryString(), queryUpdate, getThreadIdsResponse.getTypedState());
+                    if (queryUpdate.hasChanges()) {
+                        cache.updateQueryResults(query.toQueryString(), queryUpdate, getThreadIdsResponse.getTypedState());
+                    }
 
                     if (piggybackStatus == Status.UNCHANGED && queryUpdateStatus == Status.UNCHANGED) {
                         settableFuture.set(Status.UNCHANGED);

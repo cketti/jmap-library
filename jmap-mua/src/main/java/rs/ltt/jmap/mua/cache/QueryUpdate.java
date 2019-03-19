@@ -55,7 +55,8 @@ public class QueryUpdate<T extends AbstractIdentifiableEntity, U> extends Abstra
 
     @Override
     public boolean hasChanges() {
-        return removed.length + added.size() > 0;
+        final boolean modifiedItems =  removed.length + added.size() > 0;
+        return modifiedItems || hasStateChange();
     }
 
     @Override

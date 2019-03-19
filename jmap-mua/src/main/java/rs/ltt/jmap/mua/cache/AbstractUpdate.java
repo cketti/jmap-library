@@ -41,6 +41,11 @@ public abstract class AbstractUpdate<T extends AbstractIdentifiableEntity> {
 
     public abstract boolean hasChanges();
 
+    protected boolean hasStateChange() {
+        final TypedState<T> oldState = getOldTypedState();
+        return oldState == null || !oldState.equals(getNewTypedState());
+    }
+
     public boolean isHasMore() {
         return hasMore;
     }
