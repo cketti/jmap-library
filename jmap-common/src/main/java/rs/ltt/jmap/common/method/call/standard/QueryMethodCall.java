@@ -26,9 +26,12 @@ import rs.ltt.jmap.common.method.MethodCall;
 public abstract class QueryMethodCall<T extends AbstractIdentifiableEntity> implements MethodCall {
 
     private String accountId;
-    private Integer position;
     private Filter filter;
     private Comparator[] sort;
+    private Integer position;
+    private String anchor;
+    private Integer anchorOffset;
+    private Integer limit;
 
     public QueryMethodCall() {
         
@@ -41,6 +44,27 @@ public abstract class QueryMethodCall<T extends AbstractIdentifiableEntity> impl
     public QueryMethodCall(Query<T> query) {
         this.filter = query.filter;
         this.sort = query.comparators;
+    }
+
+    public QueryMethodCall(Query<T> query, Integer limit) {
+        this.filter = query.filter;
+        this.sort = query.comparators;
+        this.limit = limit;
+    }
+
+    public QueryMethodCall(Query<T> query, String afterId) {
+        this.filter = query.filter;
+        this.sort = query.comparators;
+        this.anchor = afterId;
+        this.anchorOffset = -1; //cyrus needs -1 while i expect it to be 1
+    }
+
+    public QueryMethodCall(Query<T> query, String afterId, Integer limit) {
+        this.filter = query.filter;
+        this.sort = query.comparators;
+        this.anchor = afterId;
+        this.anchorOffset = -1; //cyrus needs -1 while i expect it to be 1
+        this.limit = limit;
     }
 
 }

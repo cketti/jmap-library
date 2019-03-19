@@ -17,12 +17,14 @@
 package rs.ltt.jmap.mua.cache;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rs.ltt.jmap.common.entity.Thread;
 import rs.ltt.jmap.common.entity.*;
 import rs.ltt.jmap.mua.entity.QueryResultItem;
+import rs.ltt.jmap.mua.util.QueryResult;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -35,7 +37,7 @@ public class InMemoryCache implements Cache {
     protected final HashMap<String, Thread> threads = new HashMap<>();
     protected final HashMap<String, Email> emails = new HashMap<>();
     protected final HashMap<String, Identity> identities = new HashMap<>();
-    protected final HashMap<String, QueryResult> queryResults = new HashMap<>();
+    protected final HashMap<String, InMemoryQueryResult> queryResults = new HashMap<>();
     private String mailboxState = null;
     private String threadState = null;
     private String emailState = null;
@@ -53,13 +55,21 @@ public class InMemoryCache implements Cache {
 
 
     @Override
+    @NonNullDecl
     public QueryStateWrapper getQueryState(String query) {
         synchronized (this.queryResults) {
             final String mailboxState = this.mailboxState;
             final String threadState = this.threadState;
             final String emailState = this.emailState;
-            final QueryResult queryResult = queryResults.get(query);
-            return new QueryStateWrapper(queryResult == null ? null : queryResult.queryState, new ObjectsState(mailboxState, threadState, emailState));
+            final ObjectsState objectsState = new ObjectsState(mailboxState, threadState, emailState);
+            final InMemoryQueryResult queryResult = queryResults.get(query);
+            if (queryResult == null) {
+                return new QueryStateWrapper(null,null,objectsState);
+            } else {
+                final QueryResultItem lastItem = Iterables.getLast(queryResult.items, null);
+                final String upTo = lastItem == null ? null : lastItem.getEmailId();
+                return new QueryStateWrapper(queryResult.queryState, upTo, objectsState);
+            }
         }
     }
 
@@ -147,6 +157,9 @@ public class InMemoryCache implements Cache {
     @Override
     public void updateThreads(Update<Thread> threadUpdate) throws CacheWriteException {
         synchronized (this.threads) {
+
+            //TODO check state
+
             for (Thread thread : threadUpdate.getCreated()) {
                 if (threads.containsKey(thread.getId())) {
                     throw new CacheWriteException(String.format("Unable to create Thread(%s). Thread already exists", thread.getId()));
@@ -193,6 +206,9 @@ public class InMemoryCache implements Cache {
     @Override
     public void updateEmails(Update<Email> emailUpdate, String[] updatedProperties) throws CacheWriteException {
         synchronized (this.emails) {
+
+            //TODO check state
+
             for (Email email : emailUpdate.getCreated()) {
                 this.emails.put(email.getId(), email);
             }
@@ -256,19 +272,46 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void setQueryResult(String query, TypedState<Email> queryState, QueryResultItem[] items, TypedState<Email> emailState) {
+    public void setQueryResult(String query, QueryResult<Email> queryResult) {
         synchronized (this.queryResults) {
-            if (emailState.getState() == null || !emailState.getState().equals(this.emailState)) {
-                throw new CacheConflictException(String.format("Email state must match when updating query results. Cached state=%s. Your state=%s", this.emailState, emailState.getState()));
+            final String emailState = queryResult.objectState.getState();
+            if (emailState == null || !emailState.equals(this.emailState)) {
+                throw new CacheConflictException(String.format("Email state must match when updating query results. Cached state=%s. Your state=%s", this.emailState, emailState));
             }
-            this.queryResults.put(query, new QueryResult(queryState.getState(), items));
+            this.queryResults.put(query, new InMemoryQueryResult(queryResult.queryState.getState(), queryResult.items));
+        }
+    }
+
+    @Override
+    public void addQueryResult(String queryString, QueryResult<Email> queryResult) throws CacheWriteException, CacheConflictException {
+        synchronized (this.queryResults) {
+            final String emailState = queryResult.objectState.getState();
+            final String queryState = queryResult.queryState.getState();
+
+            //TODO simply ignore if already applied
+
+            if (emailState == null || !emailState.equals(this.emailState)) {
+                throw new CacheConflictException(String.format("Email state must match when updating query results. Cached state=%s. Your state=%s", this.emailState, emailState));
+            }
+            final InMemoryQueryResult inMemoryQueryResult = this.queryResults.get(queryString);
+            if (inMemoryQueryResult == null) {
+                throw new CacheConflictException("QueryResult does not exist in our database");
+            }
+            if (queryState == null || !queryState.equals(inMemoryQueryResult.queryState)) {
+                throw new CacheConflictException("QueryState does not match");
+            }
+            int currentItemCount = inMemoryQueryResult.items.size();
+            if (currentItemCount != queryResult.position) {
+                throw new CacheConflictException(String.format("Unexpected QueryPage. Cache has %d items. Page starts at position %d",currentItemCount,queryResult.position));
+            }
+            inMemoryQueryResult.items.addAll(Arrays.asList(queryResult.items));
         }
     }
 
     @Override
     public void updateQueryResults(String query, QueryUpdate<Email, QueryResultItem> update, TypedState<Email> emailState) throws CacheWriteException, CacheConflictException {
         synchronized (this.queryResults) {
-            final QueryResult queryResult = this.queryResults.get(query);
+            final InMemoryQueryResult queryResult = this.queryResults.get(query);
             if (queryResult == null) {
                 throw new CacheWriteException("Unable to update query. Can not find cached version");
             }
@@ -295,7 +338,7 @@ public class InMemoryCache implements Cache {
     public Missing getMissing(final String query) throws CacheReadException {
         final List<String> threadIds = new ArrayList<>();
         synchronized (this.queryResults) {
-            final QueryResult queryResult = this.queryResults.get(query);
+            final InMemoryQueryResult queryResult = this.queryResults.get(query);
             if (queryResult == null) {
                 throw new CacheReadException("Unable to find cached version");
             }
@@ -320,12 +363,12 @@ public class InMemoryCache implements Cache {
         field.set(target, field.get(source));
     }
 
-    protected static class QueryResult {
+    protected static class InMemoryQueryResult {
 
         private String queryState;
         private ArrayList<QueryResultItem> items;
 
-        QueryResult(String queryState, QueryResultItem[] items) {
+        InMemoryQueryResult(String queryState, QueryResultItem[] items) {
             this.queryState = queryState;
             this.items = new ArrayList<>(Arrays.asList(items));
         }

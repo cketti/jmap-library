@@ -64,6 +64,8 @@ public class Main {
     private static int offset = 0;
     private static int availableRows = 0;
 
+    private static EmailQuery currentQuery;
+
     public static void main(String... args) {
         if (args.length != 2) {
             System.err.println("java -jar lttrs-cli.jar username password");
@@ -73,7 +75,7 @@ public class Main {
 
         final String username = args[0];
         final String password = args[1];
-        final Mua mua = Mua.builder().username(username).password(password).cache(myInMemoryCache).build();
+        final Mua mua = Mua.builder().username(username).password(password).cache(myInMemoryCache).queryPageSize(10).build();
 
         DefaultTerminalFactory defaultTerminalFactory = new DefaultTerminalFactory();
         try {
@@ -110,17 +112,17 @@ public class Main {
                     }
                     while (running) {
                         try {
-                            EmailQuery query = EmailQuery.of(EmailFilterCondition.builder().inMailbox(inbox.getId()).build(), true);
+                            currentQuery = EmailQuery.of(EmailFilterCondition.builder().inMailbox(inbox.getId()).build(), true);
                             if (items == null) {
                                 loadingMessage(screen, "Loading messages from inbox…");
                             }
-                            Status status = mua.query(query).get();
+                            Status status = mua.query(currentQuery).get();
                             if (status != Status.UNCHANGED) {
-                                items = myInMemoryCache.getQueryViewItems(query.toQueryString());
+                                items = myInMemoryCache.getQueryViewItems(currentQuery.toQueryString());
                                 redrawCurrentList(screen);
                             }
                             try {
-                                Thread.sleep(2000);
+                                Thread.sleep(5000);
                             } catch (InterruptedException e) {
                                 //goodbye
                             }
@@ -156,7 +158,7 @@ public class Main {
                     break;
                 }
                 if (keyStroke.getKeyType() == KeyType.ArrowDown) {
-                    moveCursorDown(screen);
+                    moveCursorDown(screen, mua);
                 }
                 if (keyStroke.getKeyType() == KeyType.ArrowUp) {
                     moveCursorUp(screen);
@@ -200,13 +202,25 @@ public class Main {
         }
     }
 
-    private static void moveCursorDown(TerminalScreen screen) throws IOException {
+    private static void moveCursorDown(TerminalScreen screen, Mua mua) throws IOException {
         if (items != null && items.size() - 1 > cursorPosition) {
             ++cursorPosition;
             if (cursorPosition - offset == availableRows) {
                 ++offset;
             }
             redrawCurrentList(screen);
+            if (cursorPosition == items.size() -1) {
+                QueryViewItem last = Iterables.getLast(items, null);
+                try {
+                    Boolean newEntries = mua.query(currentQuery, last.mostRecent.getId()).get();
+                    if (newEntries) {
+                        items = myInMemoryCache.getQueryViewItems(currentQuery.toQueryString());
+                        redrawCurrentList(screen);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();;
+                }
+            }
         }
     }
 

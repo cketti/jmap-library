@@ -16,10 +16,13 @@
 
 package rs.ltt.jmap.mua.util;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
 import rs.ltt.jmap.common.entity.AddedItem;
 import rs.ltt.jmap.common.entity.Email;
+import rs.ltt.jmap.common.entity.TypedState;
 import rs.ltt.jmap.common.method.response.email.GetEmailMethodResponse;
 import rs.ltt.jmap.common.method.response.email.QueryChangesEmailMethodResponse;
 import rs.ltt.jmap.common.method.response.email.QueryEmailMethodResponse;
@@ -27,9 +30,22 @@ import rs.ltt.jmap.mua.entity.QueryResultItem;
 
 import java.util.List;
 
-public class QueryResultUtils {
+public class QueryResult<T extends AbstractIdentifiableEntity> {
 
-    public static QueryResultItem[] of(QueryEmailMethodResponse queryEmailMethodResponse, GetEmailMethodResponse emailMethodResponse) {
+    public final QueryResultItem[] items;
+    public final int position;
+    public final TypedState<T> queryState;
+    public final TypedState<T> objectState;
+
+    private QueryResult(QueryResultItem[] items, int position, TypedState<T> queryState, TypedState<T> objectState) {
+        this.items = items;
+        this.position = position;
+        this.queryState = queryState;
+        this.objectState = objectState;
+    }
+
+
+    public static QueryResult<Email> of(QueryEmailMethodResponse queryEmailMethodResponse, GetEmailMethodResponse emailMethodResponse) {
         final String[] emailIds = queryEmailMethodResponse.getIds();
         final QueryResultItem[] resultItems = new QueryResultItem[emailIds.length];
         final ImmutableMap<String, String> emailIdToThreadIdMap = map(emailMethodResponse);
@@ -37,7 +53,7 @@ public class QueryResultUtils {
             final String emailId = emailIds[i];
             resultItems[i] = QueryResultItem.of(emailId, emailIdToThreadIdMap.get(emailId));
         }
-        return resultItems;
+        return new QueryResult<>(resultItems, queryEmailMethodResponse.getPosition(), queryEmailMethodResponse.getTypedQueryState(), emailMethodResponse.getTypedState());
     }
 
     private static ImmutableMap<String, String> map(GetEmailMethodResponse emailMethodResponse) {
@@ -59,4 +75,12 @@ public class QueryResultUtils {
         return builder.build();
     }
 
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("items", items)
+                .add("position", position)
+                .add("objectState", objectState.getState())
+                .toString();
+    }
 }

@@ -16,16 +16,10 @@
 
 package rs.ltt.jmap.mua.cache;
 
-public class QueryStateWrapper {
+public class InconsistentQueryStateException extends IllegalStateException {
 
-    public final ObjectsState objectsState;
-    public final String upTo;
-    public final String queryState;
-
-
-    public QueryStateWrapper(String queryState, String upTo, ObjectsState objectsState) {
-        this.queryState = queryState;
-        this.upTo = upTo;
-        this.objectsState = objectsState;
+    public InconsistentQueryStateException(String message) {
+        super(message);
     }
+
 }

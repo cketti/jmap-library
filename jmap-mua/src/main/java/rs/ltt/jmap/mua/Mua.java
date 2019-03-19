@@ -56,7 +56,7 @@ import rs.ltt.jmap.mua.cache.*;
 import rs.ltt.jmap.mua.entity.QueryResultItem;
 import rs.ltt.jmap.mua.util.CreateUtil;
 import rs.ltt.jmap.mua.util.MailboxUtils;
-import rs.ltt.jmap.mua.util.QueryResultUtils;
+import rs.ltt.jmap.mua.util.QueryResult;
 import rs.ltt.jmap.mua.util.UpdateUtil;
 
 import java.util.ArrayList;
@@ -72,6 +72,7 @@ public class Mua {
     private static final Logger LOGGER = LoggerFactory.getLogger(Mua.class);
     private final JmapClient jmapClient;
     private final Cache cache;
+    private Integer queryPageSize = null;
     private ListeningExecutorService ioExecutorService = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
 
     private Mua(JmapClient jmapClient, Cache cache) {
@@ -688,28 +689,6 @@ public class Mua {
         }, MoreExecutors.directExecutor());
     }
 
-    private ListenableFuture<Status> updateThreads(final String state, final JmapClient.MultiCall multiCall) {
-        Preconditions.checkNotNull(state, "state can not be null when updating threads");
-        final SettableFuture<Status> settableFuture = SettableFuture.create();
-        final UpdateUtil.MethodResponsesFuture methodResponsesFuture = UpdateUtil.threads(multiCall, state);
-        methodResponsesFuture.changes.addListener(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    final ChangesThreadMethodResponse changesResponse = methodResponsesFuture.changes.get().getMain(ChangesThreadMethodResponse.class);
-                    final GetThreadMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetThreadMethodResponse.class);
-                    final GetThreadMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetThreadMethodResponse.class);
-                    final Update<Thread> update = Update.of(changesResponse, createdResponse, updatedResponse);
-                    cache.updateThreads(update);
-                    settableFuture.set(Status.of(update));
-                } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
-                    settableFuture.setException(extractException(e));
-                }
-            }
-        }, ioExecutorService);
-        return settableFuture;
-    }
-
     private ListenableFuture<Status> updateEmails(final String state, final JmapClient.MultiCall multiCall) {
         Preconditions.checkNotNull(state, "state can not be null when updating emails");
         final SettableFuture<Status> settableFuture = SettableFuture.create();
@@ -723,6 +702,28 @@ public class Mua {
                     final GetEmailMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetEmailMethodResponse.class);
                     final Update<Email> update = Update.of(changesResponse, createdResponse, updatedResponse);
                     cache.updateEmails(update, Email.MUTABLE_PROPERTIES);
+                    settableFuture.set(Status.of(update));
+                } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
+                    settableFuture.setException(extractException(e));
+                }
+            }
+        }, ioExecutorService);
+        return settableFuture;
+    }
+
+    private ListenableFuture<Status> updateThreads(final String state, final JmapClient.MultiCall multiCall) {
+        Preconditions.checkNotNull(state, "state can not be null when updating threads");
+        final SettableFuture<Status> settableFuture = SettableFuture.create();
+        final UpdateUtil.MethodResponsesFuture methodResponsesFuture = UpdateUtil.threads(multiCall, state);
+        methodResponsesFuture.changes.addListener(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final ChangesThreadMethodResponse changesResponse = methodResponsesFuture.changes.get().getMain(ChangesThreadMethodResponse.class);
+                    final GetThreadMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetThreadMethodResponse.class);
+                    final GetThreadMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetThreadMethodResponse.class);
+                    final Update<Thread> update = Update.of(changesResponse, createdResponse, updatedResponse);
+                    cache.updateThreads(update);
                     settableFuture.set(Status.of(update));
                 } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
                     settableFuture.setException(extractException(e));
@@ -761,10 +762,83 @@ public class Mua {
         }, MoreExecutors.directExecutor());
     }
 
+    public ListenableFuture<Boolean> query(@NonNullDecl final EmailQuery query, final String afterEmailId) {
+        final ListenableFuture<QueryStateWrapper> queryStateFuture = ioExecutorService.submit(new Callable<QueryStateWrapper>() {
+            @Override
+            public QueryStateWrapper call() throws Exception {
+                return cache.getQueryState(query.toQueryString());
+            }
+        });
+        return Futures.transformAsync(queryStateFuture, new AsyncFunction<QueryStateWrapper, Boolean>() {
+            @Override
+            public ListenableFuture<Boolean> apply(@NullableDecl QueryStateWrapper queryStateWrapper) {
+                return query(query, afterEmailId, queryStateWrapper);
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
+    private ListenableFuture<Boolean> query(@NonNullDecl final EmailQuery query, @NonNullDecl final String afterEmailId, final QueryStateWrapper queryStateWrapper) {
+        Preconditions.checkNotNull(query, "Query can not be null");
+        Preconditions.checkNotNull(afterEmailId, "afterEmailId can not be null");
+        Preconditions.checkNotNull(queryStateWrapper, "QueryStateWrapper can not be null when paging");
+        if (queryStateWrapper.queryState == null) {
+            throw new InconsistentQueryStateException("QueryStateWrapper needs queryState for paging");
+        }
+        if (!afterEmailId.equals(queryStateWrapper.upTo)) {
+            throw new InconsistentQueryStateException("upToId from QueryState needs to match the supplied afterEmailId");
+        }
+        final SettableFuture<Boolean> settableFuture = SettableFuture.create();
+        JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
+        final ListenableFuture<Status> queryRefreshFuture = refreshQuery(query,queryStateWrapper,multiCall);
+
+        final Request.Invocation queryInvocation = Request.Invocation.create(new QueryEmailMethodCall(query, afterEmailId, this.queryPageSize));
+        Request.Invocation getThreadIdsInvocation = Request.Invocation.create(new GetEmailMethodCall(queryInvocation.createReference(Request.Invocation.ResultReference.Path.IDS), new String[]{"threadId"}));
+        final ListenableFuture<MethodResponses> queryResponsesFuture = multiCall.add(queryInvocation);
+        final ListenableFuture<MethodResponses> getThreadIdsResponsesFuture = multiCall.add(getThreadIdsInvocation);
+
+        queryResponsesFuture.addListener(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    QueryEmailMethodResponse queryResponse = queryResponsesFuture.get().getMain(QueryEmailMethodResponse.class);
+                    GetEmailMethodResponse getThreadIdsResponse = getThreadIdsResponsesFuture.get().getMain(GetEmailMethodResponse.class);
+
+                    final QueryResult queryResult = QueryResult.of(queryResponse, getThreadIdsResponse);
+
+                    //processing order is:
+                    //  1) refresh the existent query (which in our implementation also piggybacks email and thread updates)
+                    //  2) store new items
+
+                    //TODO status=has_more should probably throw; but cache will eventually throw anyway
+                    queryRefreshFuture.get();
+
+                    cache.addQueryResult(query.toQueryString(), queryResult);
+
+                    fetchMissing(query.toQueryString()).addListener(new Runnable() {
+                        @Override
+                        public void run() {
+                            settableFuture.set(queryResult.items.length > 0);
+                        }
+                    }, MoreExecutors.directExecutor());
+                } catch (Exception e) {
+                    settableFuture.setException(extractException(e));
+                }
+            }
+        }, ioExecutorService);
+        multiCall.execute();
+        return settableFuture;
+    }
+
     private ListenableFuture<Status> refreshQuery(@NonNullDecl final EmailQuery query, @NonNullDecl final QueryStateWrapper queryStateWrapper) {
+        final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
+        ListenableFuture<Status> future = refreshQuery(query, queryStateWrapper, multiCall);
+        multiCall.execute();
+        return future;
+    }
+
+    private ListenableFuture<Status> refreshQuery(@NonNullDecl final EmailQuery query, @NonNullDecl final QueryStateWrapper queryStateWrapper, final JmapClient.MultiCall multiCall) {
         Preconditions.checkNotNull(queryStateWrapper.queryState, "QueryState can not be null when attempting to refresh query");
         final SettableFuture<Status> settableFuture = SettableFuture.create();
-        final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
 
         final List<ListenableFuture<Status>> piggyBackedFuturesList = piggyBack(queryStateWrapper.objectsState, multiCall);
 
@@ -772,15 +846,13 @@ public class Mua {
         final ListenableFuture<MethodResponses> queryChangesResponsesFuture = multiCall.add(queryChangesInvocation);
         final ListenableFuture<MethodResponses> getThreadIdResponsesFuture = multiCall.call(new GetEmailMethodCall(queryChangesInvocation.createReference(Request.Invocation.ResultReference.Path.ADDED_IDS), new String[]{"threadId"}));
 
-        multiCall.execute();
-
         queryChangesResponsesFuture.addListener(new Runnable() {
             @Override
             public void run() {
                 try {
                     QueryChangesEmailMethodResponse queryChangesResponse = queryChangesResponsesFuture.get().getMain(QueryChangesEmailMethodResponse.class);
                     GetEmailMethodResponse getThreadIdsResponse = getThreadIdResponsesFuture.get().getMain(GetEmailMethodResponse.class);
-                    List<AddedItem<QueryResultItem>> added = QueryResultUtils.of(queryChangesResponse, getThreadIdsResponse);
+                    List<AddedItem<QueryResultItem>> added = QueryResult.of(queryChangesResponse, getThreadIdsResponse);
 
                     final QueryUpdate<Email, QueryResultItem> queryUpdate = QueryUpdate.of(queryChangesResponse, added);
 
@@ -824,7 +896,7 @@ public class Mua {
         //these need to be processed *before* the Query call or else the fetchMissing will not honor newly fetched ids
         final List<ListenableFuture<Status>> piggyBackedFuturesList = piggyBack(queryStateWrapper.objectsState, multiCall);
 
-        final Request.Invocation queryInvocation = Request.Invocation.create(new QueryEmailMethodCall(query));
+        final Request.Invocation queryInvocation = Request.Invocation.create(new QueryEmailMethodCall(query,this.queryPageSize));
         Request.Invocation getThreadIdsInvocation = Request.Invocation.create(new GetEmailMethodCall(queryInvocation.createReference(Request.Invocation.ResultReference.Path.IDS), new String[]{"threadId"}));
         final ListenableFuture<MethodResponses> queryResponsesFuture = multiCall.add(queryInvocation);
         final ListenableFuture<MethodResponses> getThreadIdsResponsesFuture = multiCall.add(getThreadIdsInvocation);
@@ -850,7 +922,7 @@ public class Mua {
                     QueryEmailMethodResponse queryResponse = queryResponsesFuture.get().getMain(QueryEmailMethodResponse.class);
                     GetEmailMethodResponse getThreadIdsResponse = getThreadIdsResponsesFuture.get().getMain(GetEmailMethodResponse.class);
 
-                    QueryResultItem[] queryResultItems = QueryResultUtils.of(queryResponse, getThreadIdsResponse);
+                    QueryResult queryResult = QueryResult.of(queryResponse, getThreadIdsResponse);
 
                     //processing order is:
                     //  1) update Objects (Email, Threads, and Mailboxes)
@@ -867,7 +939,11 @@ public class Mua {
                         cache.setEmails(getEmailResponse.getTypedState(), getEmailResponse.getList());
                     }
 
-                    cache.setQueryResult(query.toQueryString(), queryResponse.getTypedQueryState(), queryResultItems, getThreadIdsResponse.getTypedState());
+                    if (queryResult.position != 0) {
+                        throw new IllegalStateException("Server reported position "+queryResult.position+" in response to initial query. We expected 0");
+                    }
+
+                    cache.setQueryResult(query.toQueryString(), queryResult);
 
                     if (getEmailResponsesFutureOptional.isPresent() && getEmailResponsesFutureOptional.isPresent()) {
                         settableFuture.set(Status.UPDATED);
@@ -945,6 +1021,7 @@ public class Mua {
         private String password;
         private SessionCache sessionCache = new SessionFileCache();
         private Cache cache = new InMemoryCache();
+        private Integer queryPageSize = null;
 
         private Builder() {
 
@@ -957,6 +1034,11 @@ public class Mua {
 
         public Builder password(String password) {
             this.password = password;
+            return this;
+        }
+
+        public Builder queryPageSize(Integer queryPageSize) {
+            this.queryPageSize = queryPageSize;
             return this;
         }
 
@@ -973,7 +1055,9 @@ public class Mua {
         public Mua build() {
             JmapClient jmapClient = new JmapClient(this.username, this.password);
             jmapClient.setSessionCache(this.sessionCache);
-            return new Mua(jmapClient, cache);
+            Mua mua = new Mua(jmapClient, cache);
+            mua.queryPageSize = this.queryPageSize;
+            return mua;
         }
     }
 

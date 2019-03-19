@@ -32,7 +32,7 @@ public class MyInMemoryCache extends InMemoryCache {
     public List<QueryViewItem> getQueryViewItems(String query) {
         ImmutableList.Builder<QueryViewItem> listBuilder = new ImmutableList.Builder<>();
         synchronized (this.queryResults) {
-            QueryResult queryResult = this.queryResults.get(query);
+            InMemoryQueryResult queryResult = this.queryResults.get(query);
             if (queryResult != null) {
                 for(QueryResultItem item : queryResult.getItems()) {
                     Email email;

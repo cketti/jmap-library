@@ -41,4 +41,19 @@ public class QueryEmailMethodCall extends QueryMethodCall<Email> {
         super(query);
         collapseThreads = query.collapseThreads;
     }
+
+    public QueryEmailMethodCall(EmailQuery query, Integer limit) {
+        super(query, limit);
+        collapseThreads = query.collapseThreads;
+    }
+
+    public QueryEmailMethodCall(EmailQuery query, String afterEmailId) {
+        super(query, afterEmailId);
+        collapseThreads = query.collapseThreads;
+    }
+
+    public QueryEmailMethodCall(EmailQuery query, String afterEmailId, Integer limit) {
+        super(query, afterEmailId, limit);
+        collapseThreads = query.collapseThreads;
+    }
 }
