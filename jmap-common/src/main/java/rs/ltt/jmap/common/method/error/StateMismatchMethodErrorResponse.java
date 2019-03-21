@@ -14,26 +14,11 @@
  *
  */
 
-package rs.ltt.jmap.client.api;
+package rs.ltt.jmap.common.method.error;
 
+import rs.ltt.jmap.annotation.JmapError;
 import rs.ltt.jmap.common.method.MethodErrorResponse;
-import rs.ltt.jmap.common.method.MethodResponse;
 
-public class MethodErrorResponseException extends JmapApiException {
-
-    private final MethodErrorResponse methodErrorResponse;
-    private final MethodResponse[] additional;
-
-    MethodErrorResponseException(MethodErrorResponse methodErrorResponse, MethodResponse[] additional) {
-        this.methodErrorResponse = methodErrorResponse;
-        this.additional = additional;
-    }
-
-    public MethodErrorResponse getMethodErrorResponse() {
-        return methodErrorResponse;
-    }
-
-    public MethodResponse[] getAdditional() {
-        return additional;
-    }
+@JmapError("stateMismatch")
+public class StateMismatchMethodErrorResponse extends MethodErrorResponse {
 }

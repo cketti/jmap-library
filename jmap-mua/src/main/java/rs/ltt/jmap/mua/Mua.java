@@ -459,16 +459,42 @@ public class Mua {
         }, MoreExecutors.directExecutor());
     }
 
-    public ListenableFuture<Boolean> setKeyword(Collection<? extends IdentifiableEmailWithKeywords> emails, String keyword) {
+    public ListenableFuture<Boolean> setKeyword(final Collection<? extends IdentifiableEmailWithKeywords> emails, final String keyword) {
+        return Futures.transformAsync(getObjectsState(), new AsyncFunction<ObjectsState, Boolean>() {
+            @Override
+            public ListenableFuture<Boolean> apply(@NullableDecl ObjectsState objectsState) throws Exception {
+                return setKeyword(emails, keyword, objectsState);
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
+    private ListenableFuture<ObjectsState> getObjectsState() {
+        return ioExecutorService.submit(new Callable<ObjectsState>() {
+            @Override
+            public ObjectsState call() {
+                return cache.getObjectsState();
+            }
+        });
+    }
+
+    private ListenableFuture<Boolean> setKeyword(Collection<? extends IdentifiableEmailWithKeywords> emails, String keyword, ObjectsState objectsState) {
         final ImmutableMap.Builder<String, Map<String, Object>> emailPatchObjectMapBuilder = ImmutableMap.builder();
         for (IdentifiableEmailWithKeywords email : emails) {
             if (!email.getKeywords().containsKey(keyword)) {
                 emailPatchObjectMapBuilder.put(email.getId(), Patches.set("keywords/" + keyword, true));
             }
         }
-        final ImmutableMap<String, Map<String, Object>> map = emailPatchObjectMapBuilder.build();
-        LOGGER.info(String.format("set keyword(%s) on %d emails", keyword, map.size()));
-        ListenableFuture<MethodResponses> future = jmapClient.call(new SetEmailMethodCall(null, map));
+        final ImmutableMap<String, Map<String, Object>> patches = emailPatchObjectMapBuilder.build();
+        LOGGER.info(String.format("set keyword(%s) on %d emails", keyword, patches.size()));
+        if (patches.size() == 0) {
+            return Futures.immediateFuture(false);
+        }
+        JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
+        ListenableFuture<MethodResponses> future = multiCall.call(new SetEmailMethodCall(objectsState.emailState, patches));
+        if (objectsState.emailState != null) {
+            updateEmails(objectsState.emailState, multiCall);
+        }
+        multiCall.execute();
         return Futures.transformAsync(future, new AsyncFunction<MethodResponses, Boolean>() {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl MethodResponses methodResponses) throws Exception {
@@ -479,16 +505,57 @@ public class Mua {
         }, ioExecutorService);
     }
 
-    public ListenableFuture<Boolean> removeKeyword(Collection<? extends IdentifiableEmailWithKeywords> emails, String keyword) {
+    private ListenableFuture<Status> updateEmails(final String state, final JmapClient.MultiCall multiCall) {
+        Preconditions.checkNotNull(state, "state can not be null when updating emails");
+        final SettableFuture<Status> settableFuture = SettableFuture.create();
+        final UpdateUtil.MethodResponsesFuture methodResponsesFuture = UpdateUtil.emails(multiCall, state);
+        methodResponsesFuture.changes.addListener(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final ChangesEmailMethodResponse changesResponse = methodResponsesFuture.changes.get().getMain(ChangesEmailMethodResponse.class);
+                    final GetEmailMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetEmailMethodResponse.class);
+                    final GetEmailMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetEmailMethodResponse.class);
+                    final Update<Email> update = Update.of(changesResponse, createdResponse, updatedResponse);
+                    if (update.hasChanges()) {
+                        cache.updateEmails(update, Email.MUTABLE_PROPERTIES);
+                    }
+                    settableFuture.set(Status.of(update));
+                } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
+                    settableFuture.setException(extractException(e));
+                }
+            }
+        }, ioExecutorService);
+        return settableFuture;
+    }
+
+    public ListenableFuture<Boolean> removeKeyword(final Collection<? extends IdentifiableEmailWithKeywords> emails, final String keyword) {
+        return Futures.transformAsync(getObjectsState(), new AsyncFunction<ObjectsState, Boolean>() {
+            @Override
+            public ListenableFuture<Boolean> apply(@NullableDecl ObjectsState objectsState) {
+                return removeKeyword(emails, keyword, objectsState);
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
+    private ListenableFuture<Boolean> removeKeyword(final Collection<? extends IdentifiableEmailWithKeywords> emails, final String keyword, final ObjectsState objectsState) {
         final ImmutableMap.Builder<String, Map<String, Object>> emailPatchObjectMapBuilder = ImmutableMap.builder();
         for (IdentifiableEmailWithKeywords email : emails) {
             if (email.getKeywords().containsKey(keyword)) {
                 emailPatchObjectMapBuilder.put(email.getId(), Patches.remove("keywords/" + keyword));
             }
         }
-        final ImmutableMap<String, Map<String, Object>> map = emailPatchObjectMapBuilder.build();
-        LOGGER.info(String.format("remove keyword(%s) from %d emails", keyword, map.size()));
-        ListenableFuture<MethodResponses> future = jmapClient.call(new SetEmailMethodCall(null, map));
+        final ImmutableMap<String, Map<String, Object>> patches = emailPatchObjectMapBuilder.build();
+        LOGGER.info(String.format("remove keyword(%s) from %d emails", keyword, patches.size()));
+        if (patches.size() == 0) {
+            return Futures.immediateFuture(false);
+        }
+        JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
+        ListenableFuture<MethodResponses> future = multiCall.call(new SetEmailMethodCall(objectsState.emailState, patches));
+        if (objectsState.emailState != null) {
+            updateEmails(objectsState.emailState, multiCall);
+        }
+        multiCall.execute();
         return Futures.transformAsync(future, new AsyncFunction<MethodResponses, Boolean>() {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl MethodResponses methodResponses) throws Exception {
@@ -516,7 +583,16 @@ public class Mua {
         return removeFromMailbox(emails, mailbox.getId(), archive);
     }
 
-    private ListenableFuture<Boolean> removeFromMailbox(Collection<? extends IdentifiableEmailWithMailboxIds> emails, String mailboxId, @NullableDecl final IdentifiableMailboxWithRole archive) {
+    private ListenableFuture<Boolean> removeFromMailbox(final Collection<? extends IdentifiableEmailWithMailboxIds> emails, final String mailboxId, @NullableDecl final IdentifiableMailboxWithRole archive) {
+        return Futures.transformAsync(getObjectsState(), new AsyncFunction<ObjectsState, Boolean>() {
+            @Override
+            public ListenableFuture<Boolean> apply(@NullableDecl ObjectsState objectsState) throws Exception {
+                return removeFromMailbox(emails, mailboxId, archive, objectsState);
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
+    private ListenableFuture<Boolean> removeFromMailbox(Collection<? extends IdentifiableEmailWithMailboxIds> emails, String mailboxId, @NullableDecl final IdentifiableMailboxWithRole archive, final ObjectsState objectsState) {
         Preconditions.checkNotNull(emails, "emails can not be null when attempting to remove them from a mailbox");
         Preconditions.checkNotNull(mailboxId, "mailboxId can not be null when attempting to remove emails");
         final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
@@ -538,7 +614,14 @@ public class Mua {
             emailPatchObjectMapBuilder.put(email.getId(), patchesBuilder.build());
 
         }
-        final ListenableFuture<MethodResponses> setEmailFuture = multiCall.call(new SetEmailMethodCall(null, emailPatchObjectMapBuilder.build()));
+        final ImmutableMap<String, Map<String, Object>> patches = emailPatchObjectMapBuilder.build();
+        if (patches.size() == 0) {
+            return Futures.immediateFuture(false);
+        }
+        final ListenableFuture<MethodResponses> setEmailFuture = multiCall.call(new SetEmailMethodCall(objectsState.emailState, patches));
+        if (objectsState.emailState != null) {
+            updateEmails(objectsState.emailState, multiCall);
+        }
         multiCall.execute();
         return Futures.transformAsync(setEmailFuture, new AsyncFunction<MethodResponses, Boolean>() {
             @Override
@@ -601,7 +684,17 @@ public class Mua {
      *               Do not pass null if a Trash mailbox exists on the server as this call will attempt to create one
      *               and fail.
      */
-    public ListenableFuture<Boolean> moveToTrash(Collection<? extends IdentifiableEmailWithMailboxIds> emails, @NullableDecl final IdentifiableMailboxWithRole trash) {
+
+    public ListenableFuture<Boolean> moveToTrash(final Collection<? extends IdentifiableEmailWithMailboxIds> emails, @NullableDecl final IdentifiableMailboxWithRole trash) {
+        return Futures.transformAsync(getObjectsState(), new AsyncFunction<ObjectsState, Boolean>() {
+            @Override
+            public ListenableFuture<Boolean> apply(@NullableDecl ObjectsState objectsState) throws Exception {
+                return moveToTrash(emails, trash, objectsState);
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
+    private ListenableFuture<Boolean> moveToTrash(Collection<? extends IdentifiableEmailWithMailboxIds> emails, @NullableDecl final IdentifiableMailboxWithRole trash, final ObjectsState objectsState) {
         final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
         final Optional<ListenableFuture<MethodResponses>> mailboxCreateFutureOptional = CreateUtil.mailbox(multiCall, trash, Role.TRASH);
         ImmutableMap.Builder<String, Map<String, Object>> emailPatchObjectMapBuilder = ImmutableMap.builder();
@@ -618,7 +711,16 @@ public class Mua {
             emailPatchObjectMapBuilder.put(email.getId(), patchesBuilder.build());
         }
 
-        final ListenableFuture<MethodResponses> setEmailFuture = multiCall.call(new SetEmailMethodCall(null, emailPatchObjectMapBuilder.build()));
+        final ImmutableMap<String, Map<String, Object>> patches = emailPatchObjectMapBuilder.build();
+
+        if (patches.size() == 0) {
+            return Futures.immediateFuture(false);
+        }
+
+        final ListenableFuture<MethodResponses> setEmailFuture = multiCall.call(new SetEmailMethodCall(objectsState.emailState, patches));
+        if (objectsState.emailState != null) {
+            updateEmails(objectsState.emailState, multiCall);
+        }
         multiCall.execute();
         return Futures.transformAsync(setEmailFuture, new AsyncFunction<MethodResponses, Boolean>() {
             @Override
@@ -635,14 +737,7 @@ public class Mua {
     }
 
     public ListenableFuture<Status> refresh() {
-        final ListenableFuture<ObjectsState> objectsStateFuture = ioExecutorService.submit(new Callable<ObjectsState>() {
-            @Override
-            public ObjectsState call() throws Exception {
-                return cache.getObjectsState();
-            }
-        });
-
-        return Futures.transformAsync(objectsStateFuture, new AsyncFunction<ObjectsState, Status>() {
+        return Futures.transformAsync(getObjectsState(), new AsyncFunction<ObjectsState, Status>() {
             @Override
             public ListenableFuture<Status> apply(@NullableDecl ObjectsState objectsState) throws Exception {
                 return refresh(objectsState);
@@ -691,30 +786,6 @@ public class Mua {
                 return Status.UNCHANGED;
             }
         }, MoreExecutors.directExecutor());
-    }
-
-    private ListenableFuture<Status> updateEmails(final String state, final JmapClient.MultiCall multiCall) {
-        Preconditions.checkNotNull(state, "state can not be null when updating emails");
-        final SettableFuture<Status> settableFuture = SettableFuture.create();
-        final UpdateUtil.MethodResponsesFuture methodResponsesFuture = UpdateUtil.emails(multiCall, state);
-        methodResponsesFuture.changes.addListener(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    final ChangesEmailMethodResponse changesResponse = methodResponsesFuture.changes.get().getMain(ChangesEmailMethodResponse.class);
-                    final GetEmailMethodResponse createdResponse = methodResponsesFuture.created.get().getMain(GetEmailMethodResponse.class);
-                    final GetEmailMethodResponse updatedResponse = methodResponsesFuture.updated.get().getMain(GetEmailMethodResponse.class);
-                    final Update<Email> update = Update.of(changesResponse, createdResponse, updatedResponse);
-                    if (update.hasChanges()) {
-                        cache.updateEmails(update, Email.MUTABLE_PROPERTIES);
-                    }
-                    settableFuture.set(Status.of(update));
-                } catch (InterruptedException | ExecutionException | CacheWriteException | CacheConflictException e) {
-                    settableFuture.setException(extractException(e));
-                }
-            }
-        }, ioExecutorService);
-        return settableFuture;
     }
 
     private ListenableFuture<Status> updateThreads(final String state, final JmapClient.MultiCall multiCall) {
@@ -802,7 +873,7 @@ public class Mua {
         }
         final SettableFuture<Boolean> settableFuture = SettableFuture.create();
         JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
-        final ListenableFuture<Status> queryRefreshFuture = refreshQuery(query,queryStateWrapper,multiCall);
+        final ListenableFuture<Status> queryRefreshFuture = refreshQuery(query, queryStateWrapper, multiCall);
 
         final Request.Invocation queryInvocation = Request.Invocation.create(new QueryEmailMethodCall(query, afterEmailId, this.queryPageSize));
         Request.Invocation getThreadIdsInvocation = Request.Invocation.create(new GetEmailMethodCall(queryInvocation.createReference(Request.Invocation.ResultReference.Path.IDS), new String[]{"threadId"}));
@@ -912,7 +983,7 @@ public class Mua {
         //these need to be processed *before* the Query call or else the fetchMissing will not honor newly fetched ids
         final List<ListenableFuture<Status>> piggyBackedFuturesList = piggyBack(queryStateWrapper.objectsState, multiCall);
 
-        final Request.Invocation queryInvocation = Request.Invocation.create(new QueryEmailMethodCall(query,this.queryPageSize));
+        final Request.Invocation queryInvocation = Request.Invocation.create(new QueryEmailMethodCall(query, this.queryPageSize));
         Request.Invocation getThreadIdsInvocation = Request.Invocation.create(new GetEmailMethodCall(queryInvocation.createReference(Request.Invocation.ResultReference.Path.IDS), new String[]{"threadId"}));
         final ListenableFuture<MethodResponses> queryResponsesFuture = multiCall.add(queryInvocation);
         final ListenableFuture<MethodResponses> getThreadIdsResponsesFuture = multiCall.add(getThreadIdsInvocation);
@@ -956,7 +1027,7 @@ public class Mua {
                     }
 
                     if (queryResult.position != 0) {
-                        throw new IllegalStateException("Server reported position "+queryResult.position+" in response to initial query. We expected 0");
+                        throw new IllegalStateException("Server reported position " + queryResult.position + " in response to initial query. We expected 0");
                     }
 
                     cache.setQueryResult(query.toQueryString(), queryResult);
