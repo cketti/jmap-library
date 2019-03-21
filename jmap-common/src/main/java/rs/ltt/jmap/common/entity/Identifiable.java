@@ -16,20 +16,7 @@
 
 package rs.ltt.jmap.common.entity;
 
-import com.google.common.base.MoreObjects;
+public interface Identifiable {
 
-public class AbstractIdentifiableEntity implements Identifiable {
-
-    protected String id;
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
-                .toString();
-    }
-
-    public String getId() {
-        return id;
-    }
+    String getId();
 }

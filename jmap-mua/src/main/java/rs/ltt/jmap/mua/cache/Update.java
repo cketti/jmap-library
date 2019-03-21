@@ -22,6 +22,7 @@ import rs.ltt.jmap.common.entity.TypedState;
 import rs.ltt.jmap.common.method.response.standard.ChangesMethodResponse;
 import rs.ltt.jmap.common.method.response.standard.GetMethodResponse;
 
+//TODO: together with AbstractUpdate and QueryUpdate this can probably be moved to jmap-client
 public class Update<T extends AbstractIdentifiableEntity> extends AbstractUpdate<T> {
 
     private final T[] created;

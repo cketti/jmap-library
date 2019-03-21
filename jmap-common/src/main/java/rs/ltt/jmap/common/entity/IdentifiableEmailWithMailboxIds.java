@@ -16,20 +16,10 @@
 
 package rs.ltt.jmap.common.entity;
 
-import com.google.common.base.MoreObjects;
+import java.util.Map;
 
-public class AbstractIdentifiableEntity implements Identifiable {
+public interface IdentifiableEmailWithMailboxIds extends Identifiable {
 
-    protected String id;
+    Map<String,Boolean> getMailboxIds();
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
-                .toString();
-    }
-
-    public String getId() {
-        return id;
-    }
 }

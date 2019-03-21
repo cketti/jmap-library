@@ -14,6 +14,7 @@
  *
  */
 
+//TODO probably better belongs into util?
 package rs.ltt.jmap.mua.util;
 
 import com.google.common.base.MoreObjects;

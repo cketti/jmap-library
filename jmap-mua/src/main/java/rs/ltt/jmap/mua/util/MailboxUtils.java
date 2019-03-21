@@ -18,7 +18,7 @@ package rs.ltt.jmap.mua.util;
 
 import com.google.common.base.CaseFormat;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
-import rs.ltt.jmap.common.entity.IdentifiableSpecialMailbox;
+import rs.ltt.jmap.common.entity.IdentifiableMailboxWithRole;
 import rs.ltt.jmap.common.entity.Mailbox;
 import rs.ltt.jmap.common.entity.Role;
 
@@ -27,8 +27,8 @@ import java.util.Collection;
 public class MailboxUtils {
 
     public static @NullableDecl
-    IdentifiableSpecialMailbox find(Collection<? extends IdentifiableSpecialMailbox> mailboxes, Role role) {
-        for (IdentifiableSpecialMailbox mailbox : mailboxes) {
+    IdentifiableMailboxWithRole find(Collection<? extends IdentifiableMailboxWithRole> mailboxes, Role role) {
+        for (IdentifiableMailboxWithRole mailbox : mailboxes) {
             if (mailbox.getRole() == role) {
                 return mailbox;
             }

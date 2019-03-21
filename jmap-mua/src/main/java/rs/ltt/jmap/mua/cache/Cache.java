@@ -23,7 +23,6 @@ import rs.ltt.jmap.common.entity.*;
 import rs.ltt.jmap.mua.entity.QueryResultItem;
 import rs.ltt.jmap.mua.util.QueryResult;
 
-import java.lang.reflect.Type;
 import java.util.Collection;
 
 public interface Cache {
@@ -43,7 +42,7 @@ public interface Cache {
 
     void updateMailboxes(Update<Mailbox> mailboxUpdate, String[] updatedProperties) throws CacheWriteException, CacheConflictException;
 
-    Collection<? extends IdentifiableSpecialMailbox> getSpecialMailboxes() throws NotSynchronizedException;
+    Collection<? extends IdentifiableMailboxWithRole> getSpecialMailboxes() throws NotSynchronizedException;
 
     //Threads
     //we probably don’t need a getThreads() method since we always access using the Queries

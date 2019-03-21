@@ -88,7 +88,7 @@ public class Main {
             final Thread refreshThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    final IdentifiableSpecialMailbox inbox;
+                    final IdentifiableMailboxWithRole inbox;
                     try {
                         loadingMessage(screen, "Loading mailboxes…");
                         mua.refreshMailboxes().get();
@@ -317,7 +317,7 @@ public class Main {
 
     private static void archive(Mua mua) {
         QueryViewItem item = items.get(cursorPosition);
-        IdentifiableSpecialMailbox inbox = MailboxUtils.find(myInMemoryCache.getMailboxes(), Role.INBOX);
+        IdentifiableMailboxWithRole inbox = MailboxUtils.find(myInMemoryCache.getMailboxes(), Role.INBOX);
         try {
             mua.removeFromMailbox(myInMemoryCache.getEmails(item.threadId), inbox.getId()).get();
         } catch (InterruptedException e) {

@@ -16,7 +16,6 @@
 
 package rs.ltt.jmap.common.entity;
 
-public interface IdentifiableSpecialMailbox {
-    String getId();
+public interface IdentifiableMailboxWithRole extends Identifiable {
     Role getRole();
 }

@@ -22,7 +22,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class Mailbox extends AbstractIdentifiableEntity implements IdentifiableSpecialMailbox {
+public class Mailbox extends AbstractIdentifiableEntity implements IdentifiableMailboxWithRole {
 
     private String name;
 
