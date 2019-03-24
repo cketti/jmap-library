@@ -443,7 +443,7 @@ public class Mua {
         }, MoreExecutors.directExecutor());
     }
 
-    public ListenableFuture<Boolean> send(final Email email, final Identity identity, final IdentifiableMailboxWithRole drafts, final IdentifiableMailboxWithRole sent) {
+    private ListenableFuture<Boolean> send(final Email email, final Identity identity, final IdentifiableMailboxWithRole drafts, final IdentifiableMailboxWithRole sent) {
         final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
         ListenableFuture<List<Boolean>> future = Futures.allAsList(
                 draft(email, drafts, multiCall),
@@ -485,11 +485,21 @@ public class Mua {
             }
         }
         final ImmutableMap<String, Map<String, Object>> patches = emailPatchObjectMapBuilder.build();
-        LOGGER.info(String.format("set keyword(%s) on %d emails", keyword, patches.size()));
+
+        return applyEmailPatches(patches, objectsState);
+    }
+
+    private ListenableFuture<Boolean> applyEmailPatches(final Map<String, Map<String, Object>> patches, final ObjectsState objectsState) {
         if (patches.size() == 0) {
             return Futures.immediateFuture(false);
         }
         JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
+        ListenableFuture<Boolean> future = applyEmailPatches(patches, objectsState, multiCall);
+        multiCall.execute();
+        return future;
+    }
+
+    private ListenableFuture<Boolean> applyEmailPatches(final Map<String, Map<String, Object>> patches, final ObjectsState objectsState, JmapClient.MultiCall multiCall) {
         ListenableFuture<MethodResponses> future = multiCall.call(new SetEmailMethodCall(objectsState.emailState, patches));
         if (objectsState.emailState != null) {
             updateEmails(objectsState.emailState, multiCall);
@@ -546,30 +556,93 @@ public class Mua {
             }
         }
         final ImmutableMap<String, Map<String, Object>> patches = emailPatchObjectMapBuilder.build();
-        LOGGER.info(String.format("remove keyword(%s) from %d emails", keyword, patches.size()));
-        if (patches.size() == 0) {
-            return Futures.immediateFuture(false);
-        }
-        JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
-        ListenableFuture<MethodResponses> future = multiCall.call(new SetEmailMethodCall(objectsState.emailState, patches));
-        if (objectsState.emailState != null) {
-            updateEmails(objectsState.emailState, multiCall);
-        }
-        multiCall.execute();
-        return Futures.transformAsync(future, new AsyncFunction<MethodResponses, Boolean>() {
+        return applyEmailPatches(patches, objectsState);
+    }
+
+
+    /**
+     * Copies the individual emails in this collection (usually applied to an entire thread) to a given mailbox.
+     * If a certain email of this collection is already in that mailbox it will be skipped.
+     *
+     * This method is usually run as a 'add label' action.
+     *
+     * @param emails    A collection of emails. Usually all messages in a thread
+     * @param mailboxId The id of the mailbox those emails should be copied to.
+     * @return
+     */
+    public ListenableFuture<Boolean> copyToMailbox(final Collection<? extends IdentifiableEmailWithMailboxIds> emails, final String mailboxId) {
+        return Futures.transformAsync(getObjectsState(), new AsyncFunction<ObjectsState, Boolean>() {
             @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl MethodResponses methodResponses) throws Exception {
-                SetEmailMethodResponse setEmailMethodResponse = methodResponses.getMain(SetEmailMethodResponse.class);
-                SetEmailException.throwIfFailed(setEmailMethodResponse);
-                return Futures.immediateFuture(setEmailMethodResponse.getUpdatedCreatedCount() > 0);
+            public ListenableFuture<Boolean> apply(@NullableDecl ObjectsState objectsState) throws Exception {
+                return copyToMailbox(emails, mailboxId, objectsState);
             }
-        }, ioExecutorService);
+        }, MoreExecutors.directExecutor());
+    }
+
+    private ListenableFuture<Boolean> copyToMailbox(final Collection<? extends IdentifiableEmailWithMailboxIds> emails, String mailboxId, final ObjectsState objectsState) {
+        ImmutableMap.Builder<String, Map<String, Object>> emailPatchObjectMapBuilder = ImmutableMap.builder();
+        for (IdentifiableEmailWithMailboxIds email : emails) {
+            if (email.getMailboxIds().containsKey(mailboxId)) {
+                continue;
+            }
+            Patches.Builder patchesBuilder = Patches.builder();
+            patchesBuilder.set("mailboxIds/" + mailboxId, true);
+            emailPatchObjectMapBuilder.put(email.getId(), patchesBuilder.build());
+        }
+        final ImmutableMap<String, Map<String, Object>> patches = emailPatchObjectMapBuilder.build();
+
+        return applyEmailPatches(patches, objectsState);
+    }
+
+    /**
+     * Moves the individual emails in this collection (usually applied to an entire thread) *to* a given mailbox if an email
+     * is an a give *from* mailbox. Email that are not in that *from* mailbox will be skipped.
+     * <p>
+     * This method is usually run as an 'unarchive' action. If run with to=inbox from=archive emails in that thread that
+     * are for example in the 'sent' mailbox won’t be touched.
+     * <p>
+     * And alternative action could be 'move to label' where it runs with to=label from=inbox; If clients would want to
+     * implement something like that. However 'apply label' would probably use the copyToMailbox() method instead.
+     *
+     * @param emails        A collection of emails. Usually all messages in a thread
+     * @param fromMailboxId The mailbox from which those emails should be remove if they are in that mailbox
+     * @param toMailboxId   The mailbox those emails should be moved in to
+     * @return true if the update has been applied to at least one email. false otherwise
+     */
+    public ListenableFuture<Boolean> moveToMailbox(final Collection<? extends IdentifiableEmailWithMailboxIds> emails, @NonNullDecl final String fromMailboxId, @NonNullDecl final String toMailboxId) {
+        return Futures.transformAsync(getObjectsState(), new AsyncFunction<ObjectsState, Boolean>() {
+            @Override
+            public ListenableFuture<Boolean> apply(@NullableDecl ObjectsState objectsState) throws Exception {
+                return moveToMailbox(emails, fromMailboxId, toMailboxId, objectsState);
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
+    private ListenableFuture<Boolean> moveToMailbox(final Collection<? extends IdentifiableEmailWithMailboxIds> emails, @NonNullDecl String fromMailboxId, @NonNullDecl String toMailboxId, final ObjectsState objectsState) {
+        Preconditions.checkNotNull(emails, "emails can not be null when attempting to move them to a different mailbox");
+        Preconditions.checkNotNull(fromMailboxId, "fromMailboxId can not be null when attempting to move emails");
+        Preconditions.checkNotNull(toMailboxId, "toMailboxid can not be null when attempting to move emails");
+        ImmutableMap.Builder<String, Map<String, Object>> emailPatchObjectMapBuilder = ImmutableMap.builder();
+        for (IdentifiableEmailWithMailboxIds email : emails) {
+            if (!email.getMailboxIds().containsKey(fromMailboxId)) {
+                continue;
+            }
+            Patches.Builder patchesBuilder = Patches.builder();
+            patchesBuilder.remove("mailboxIds/" + fromMailboxId);
+            patchesBuilder.set("mailboxIds/" + toMailboxId, true);
+            emailPatchObjectMapBuilder.put(email.getId(), patchesBuilder.build());
+        }
+        final ImmutableMap<String, Map<String, Object>> patches = emailPatchObjectMapBuilder.build();
+
+        return applyEmailPatches(patches, objectsState);
     }
 
     /**
      * Removes the individual emails in this collection (usually applied to an entire thread) from a given mailbox. If a
      * certain email was not in this mailbox it will be skipped. If removing an email from this mailbox would otherwise
-     * lead to the email having no mailbox it will be moved to the Archive mailbox
+     * lead to the email having no mailbox it will be moved to the Archive mailbox.
+     * <p>
+     * This method is usually run as a 'archive' or  'remove label' action.
      *
      * @param emails  A collection of emails. Usually all messages in a thread
      * @param mailbox The mailbox from which those emails should be removed
@@ -618,23 +691,21 @@ public class Mua {
         if (patches.size() == 0) {
             return Futures.immediateFuture(false);
         }
-        final ListenableFuture<MethodResponses> setEmailFuture = multiCall.call(new SetEmailMethodCall(objectsState.emailState, patches));
-        if (objectsState.emailState != null) {
-            updateEmails(objectsState.emailState, multiCall);
-        }
+
+        final ListenableFuture<Boolean> patchesFuture = applyEmailPatches(patches, objectsState, multiCall);
+
         multiCall.execute();
-        return Futures.transformAsync(setEmailFuture, new AsyncFunction<MethodResponses, Boolean>() {
+
+        return Futures.transformAsync(patchesFuture, new AsyncFunction<Boolean, Boolean>() {
             @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl MethodResponses methodResponses) throws Exception {
+            public ListenableFuture<Boolean> apply(@NullableDecl Boolean patchesResults) throws Exception {
                 if (mailboxCreateFutureOptional.isPresent()) {
                     SetMailboxMethodResponse setMailboxResponse = mailboxCreateFutureOptional.get().get().getMain(SetMailboxMethodResponse.class);
                     SetMailboxException.throwIfFailed(setMailboxResponse);
                 }
-                SetEmailMethodResponse setEmailResponse = setEmailFuture.get().getMain(SetEmailMethodResponse.class);
-                SetEmailException.throwIfFailed(setEmailResponse);
-                return Futures.immediateFuture(setEmailResponse.getUpdatedCreatedCount() > 0);
+                return Futures.immediateFuture(patchesResults);
             }
-        }, ioExecutorService);
+        }, MoreExecutors.directExecutor());
     }
 
     /**
@@ -710,30 +781,22 @@ public class Mua {
             }
             emailPatchObjectMapBuilder.put(email.getId(), patchesBuilder.build());
         }
-
         final ImmutableMap<String, Map<String, Object>> patches = emailPatchObjectMapBuilder.build();
-
         if (patches.size() == 0) {
             return Futures.immediateFuture(false);
         }
-
-        final ListenableFuture<MethodResponses> setEmailFuture = multiCall.call(new SetEmailMethodCall(objectsState.emailState, patches));
-        if (objectsState.emailState != null) {
-            updateEmails(objectsState.emailState, multiCall);
-        }
+        final ListenableFuture<Boolean> patchesFuture = applyEmailPatches(patches, objectsState, multiCall);
         multiCall.execute();
-        return Futures.transformAsync(setEmailFuture, new AsyncFunction<MethodResponses, Boolean>() {
+        return Futures.transformAsync(patchesFuture, new AsyncFunction<Boolean, Boolean>() {
             @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl MethodResponses methodResponses) throws Exception {
+            public ListenableFuture<Boolean> apply(@NullableDecl Boolean patchesResults) throws Exception {
                 if (mailboxCreateFutureOptional.isPresent()) {
                     SetMailboxMethodResponse setMailboxResponse = mailboxCreateFutureOptional.get().get().getMain(SetMailboxMethodResponse.class);
                     SetMailboxException.throwIfFailed(setMailboxResponse);
                 }
-                SetEmailMethodResponse setEmailResponse = setEmailFuture.get().getMain(SetEmailMethodResponse.class);
-                SetEmailException.throwIfFailed(setEmailResponse);
-                return Futures.immediateFuture(setEmailResponse.getUpdatedCreatedCount() > 0);
+                return Futures.immediateFuture(patchesResults);
             }
-        }, ioExecutorService);
+        }, MoreExecutors.directExecutor());
     }
 
     public ListenableFuture<Status> refresh() {
