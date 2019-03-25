@@ -95,6 +95,7 @@ public class Main {
                         inbox = MailboxUtils.find(myInMemoryCache.getMailboxes(), Role.INBOX);
                         loadingMessage(screen, "Loading identities…");
                         mua.refreshIdentities().get();
+
                     } catch (Exception e) {
                         if (e instanceof ExecutionException) {
                             Throwable cause = e.getCause();
@@ -174,6 +175,12 @@ public class Main {
                 }
                 if (keyStroke.getKeyType() == KeyType.Character && keyStroke.getCharacter() == 'd') {
                     delete(mua);
+                }
+                if (keyStroke.getKeyType() == KeyType.Character && keyStroke.getCharacter() == 'j') {
+                    applyLabel(mua, "jmap");
+                }
+                if (keyStroke.getKeyType() == KeyType.Character && keyStroke.getCharacter() == 'x') {
+                    applyLabel(mua, "xmpp");
                 }
                 if (keyStroke.getKeyType() == KeyType.Character && keyStroke.getCharacter() == 'w') {
                     write(mua, false);
@@ -267,6 +274,36 @@ public class Main {
 
     }
 
+    private static void applyLabel(Mua mua, String label) {
+        Mailbox labelMailbox = null;
+        for(Mailbox mailbox : myInMemoryCache.getMailboxes()) {
+            if(label.equals(mailbox.getName()) && mailbox.getRole() == null){
+                labelMailbox = mailbox;
+            }
+        }
+        if (labelMailbox == null) {
+            try {
+                mua.createMailbox(Mailbox.builder().name(label).build()).get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        } else {
+            QueryViewItem item = items.get(cursorPosition);
+            Collection<Email> emails = myInMemoryCache.getEmails(item.threadId);
+            try {
+                mua.copyToMailbox(emails, labelMailbox.getId()).get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+
+    }
+
     private static void write(Mua mua, boolean sendImmediately) {
         EmailBodyValue emailBodyValue = EmailBodyValue.builder()
                 .value("This is a message from ltt.rs")
@@ -317,9 +354,8 @@ public class Main {
 
     private static void archive(Mua mua) {
         QueryViewItem item = items.get(cursorPosition);
-        IdentifiableMailboxWithRole inbox = MailboxUtils.find(myInMemoryCache.getMailboxes(), Role.INBOX);
         try {
-            mua.removeFromMailbox(myInMemoryCache.getEmails(item.threadId), inbox.getId()).get();
+            mua.archive(myInMemoryCache.getEmails(item.threadId)).get();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
