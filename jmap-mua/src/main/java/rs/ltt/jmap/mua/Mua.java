@@ -941,8 +941,7 @@ public class Mua {
             @Override
             public ListenableFuture<Status> apply(@NullableDecl QueryStateWrapper queryStateWrapper) {
                 Preconditions.checkNotNull(queryStateWrapper, "QueryStateWrapper can not be null");
-
-                if (queryStateWrapper.queryState == null) {
+                if (queryStateWrapper.queryState == null || queryStateWrapper.upTo == null) {
                     return initialQuery(query, queryStateWrapper);
                 } else {
                     Preconditions.checkNotNull(queryStateWrapper.objectsState, "ObjectsState can not be null if queryState was not");
@@ -1088,7 +1087,7 @@ public class Mua {
 
     private ListenableFuture<Status> initialQuery(@NonNullDecl final EmailQuery query, @NonNullDecl final QueryStateWrapper queryStateWrapper) {
 
-        Preconditions.checkState(queryStateWrapper.queryState == null, "QueryState must be NULL when calling initialQuery");
+        Preconditions.checkState(queryStateWrapper.queryState == null || queryStateWrapper.upTo == null, "QueryState or upTo must be NULL when calling initialQuery");
 
         final SettableFuture<Status> settableFuture = SettableFuture.create();
         JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
