@@ -20,25 +20,23 @@ package rs.ltt.jmap.mua.util;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
 import rs.ltt.jmap.common.entity.AddedItem;
 import rs.ltt.jmap.common.entity.Email;
 import rs.ltt.jmap.common.entity.TypedState;
 import rs.ltt.jmap.common.method.response.email.GetEmailMethodResponse;
 import rs.ltt.jmap.common.method.response.email.QueryChangesEmailMethodResponse;
 import rs.ltt.jmap.common.method.response.email.QueryEmailMethodResponse;
-import rs.ltt.jmap.mua.entity.QueryResultItem;
 
 import java.util.List;
 
-public class QueryResult<T extends AbstractIdentifiableEntity> {
+public class QueryResult {
 
     public final QueryResultItem[] items;
     public final int position;
-    public final TypedState<T> queryState;
-    public final TypedState<T> objectState;
+    public final TypedState<Email> queryState;
+    public final TypedState<Email> objectState;
 
-    private QueryResult(QueryResultItem[] items, int position, TypedState<T> queryState, TypedState<T> objectState) {
+    private QueryResult(QueryResultItem[] items, int position, TypedState<Email> queryState, TypedState<Email> objectState) {
         this.items = items;
         this.position = position;
         this.queryState = queryState;
@@ -46,7 +44,7 @@ public class QueryResult<T extends AbstractIdentifiableEntity> {
     }
 
 
-    public static QueryResult<Email> of(QueryEmailMethodResponse queryEmailMethodResponse, GetEmailMethodResponse emailMethodResponse) {
+    public static QueryResult of(QueryEmailMethodResponse queryEmailMethodResponse, GetEmailMethodResponse emailMethodResponse) {
         final String[] emailIds = queryEmailMethodResponse.getIds();
         final QueryResultItem[] resultItems = new QueryResultItem[emailIds.length];
         final ImmutableMap<String, String> emailIdToThreadIdMap = map(emailMethodResponse);
@@ -54,7 +52,7 @@ public class QueryResult<T extends AbstractIdentifiableEntity> {
             final String emailId = emailIds[i];
             resultItems[i] = QueryResultItem.of(emailId, emailIdToThreadIdMap.get(emailId));
         }
-        return new QueryResult<>(resultItems, queryEmailMethodResponse.getPosition(), queryEmailMethodResponse.getTypedQueryState(), emailMethodResponse.getTypedState());
+        return new QueryResult(resultItems, queryEmailMethodResponse.getPosition(), queryEmailMethodResponse.getTypedQueryState(), emailMethodResponse.getTypedState());
     }
 
     private static ImmutableMap<String, String> map(GetEmailMethodResponse emailMethodResponse) {

@@ -32,6 +32,7 @@
         <module>jmap-common-interface</module>
         <module>jmap-gson</module>
         <module>jmap-mua</module>
+        <module>jmap-mua-util</module>
         <module>lttrs-cli</module>
     </modules>
 

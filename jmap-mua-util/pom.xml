@@ -27,7 +27,7 @@
         <version>0.1.0</version>
     </parent>
 
-    <artifactId>jmap-mua</artifactId>
+    <artifactId>jmap-mua-util</artifactId>
 
     <build>
         <plugins>
@@ -43,25 +43,15 @@
             </plugin>
         </plugins>
     </build>
+
     <dependencies>
 
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>rs.ltt.jmap</groupId>
             <artifactId>jmap-client</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>jmap-mua-util</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.25</version>
-        </dependency>
-
     </dependencies>
+
 </project>

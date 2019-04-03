@@ -24,7 +24,7 @@ import rs.ltt.jmap.common.entity.Role;
 
 import java.util.Collection;
 
-public class MailboxUtils {
+public class MailboxUtil {
 
     public static @NullableDecl
     IdentifiableMailboxWithRole find(Collection<? extends IdentifiableMailboxWithRole> mailboxes, Role role) {

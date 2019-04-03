@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rs.ltt.jmap.common.entity.Thread;
 import rs.ltt.jmap.common.entity.*;
-import rs.ltt.jmap.mua.entity.QueryResultItem;
 import rs.ltt.jmap.mua.util.QueryResult;
+import rs.ltt.jmap.mua.util.QueryResultItem;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -272,7 +272,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void setQueryResult(String query, QueryResult<Email> queryResult) {
+    public void setQueryResult(String query, QueryResult queryResult) {
         synchronized (this.queryResults) {
             final String emailState = queryResult.objectState.getState();
             if (emailState == null || !emailState.equals(this.emailState)) {
@@ -283,7 +283,7 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void addQueryResult(String queryString, QueryResult<Email> queryResult) throws CacheWriteException, CacheConflictException {
+    public void addQueryResult(String queryString, QueryResult queryResult) throws CacheWriteException, CacheConflictException {
         synchronized (this.queryResults) {
             final String emailState = queryResult.objectState.getState();
             final String queryState = queryResult.queryState.getState();

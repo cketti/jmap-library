@@ -54,11 +54,7 @@ import rs.ltt.jmap.common.method.response.thread.ChangesThreadMethodResponse;
 import rs.ltt.jmap.common.method.response.thread.GetThreadMethodResponse;
 import rs.ltt.jmap.common.util.Patches;
 import rs.ltt.jmap.mua.cache.*;
-import rs.ltt.jmap.mua.entity.QueryResultItem;
-import rs.ltt.jmap.mua.util.CreateUtil;
-import rs.ltt.jmap.mua.util.MailboxUtils;
-import rs.ltt.jmap.mua.util.QueryResult;
-import rs.ltt.jmap.mua.util.UpdateUtil;
+import rs.ltt.jmap.mua.util.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -269,7 +265,7 @@ public class Mua {
         return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableMailboxWithRole>, Boolean>() {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableMailboxWithRole> mailboxes) {
-                return draft(email, MailboxUtils.find(mailboxes, Role.DRAFTS));
+                return draft(email, MailboxUtil.find(mailboxes, Role.DRAFTS));
             }
         }, MoreExecutors.directExecutor());
     }
@@ -339,14 +335,14 @@ public class Mua {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableMailboxWithRole> mailboxes) {
                 Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
-                final IdentifiableMailboxWithRole drafts = MailboxUtils.find(mailboxes, Role.DRAFTS);
+                final IdentifiableMailboxWithRole drafts = MailboxUtil.find(mailboxes, Role.DRAFTS);
                 final String draftMailboxId;
                 if (drafts == null || !email.getMailboxIds().containsKey(drafts.getId())) {
                     draftMailboxId = null;
                 } else {
                     draftMailboxId = drafts.getId();
                 }
-                final IdentifiableMailboxWithRole sent = MailboxUtils.find(mailboxes, Role.SENT);
+                final IdentifiableMailboxWithRole sent = MailboxUtil.find(mailboxes, Role.SENT);
                 return submit(email.getId(), identity, draftMailboxId, sent);
             }
         }, MoreExecutors.directExecutor());
@@ -425,8 +421,8 @@ public class Mua {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableMailboxWithRole> mailboxes) {
                 Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
-                final IdentifiableMailboxWithRole drafts = MailboxUtils.find(mailboxes, Role.DRAFTS);
-                final IdentifiableMailboxWithRole sent = MailboxUtils.find(mailboxes, Role.SENT);
+                final IdentifiableMailboxWithRole drafts = MailboxUtil.find(mailboxes, Role.DRAFTS);
+                final IdentifiableMailboxWithRole sent = MailboxUtil.find(mailboxes, Role.SENT);
                 return submit(emailId, identity, drafts == null ? null : drafts.getId(), sent);
             }
         }, MoreExecutors.directExecutor());
@@ -437,8 +433,8 @@ public class Mua {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableMailboxWithRole> mailboxes) {
                 Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
-                final IdentifiableMailboxWithRole draft = MailboxUtils.find(mailboxes, Role.DRAFTS);
-                final IdentifiableMailboxWithRole sent = MailboxUtils.find(mailboxes, Role.SENT);
+                final IdentifiableMailboxWithRole draft = MailboxUtil.find(mailboxes, Role.DRAFTS);
+                final IdentifiableMailboxWithRole sent = MailboxUtil.find(mailboxes, Role.SENT);
                 return send(email, identity, draft, sent);
             }
         }, MoreExecutors.directExecutor());
@@ -618,9 +614,9 @@ public class Mua {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableMailboxWithRole> mailboxes) throws Exception {
                 Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
-                final IdentifiableMailboxWithRole archive = MailboxUtils.find(mailboxes, Role.ARCHIVE);
-                final IdentifiableMailboxWithRole trash = MailboxUtils.find(mailboxes, Role.TRASH);
-                final IdentifiableMailboxWithRole inbox = MailboxUtils.find(mailboxes, Role.INBOX);
+                final IdentifiableMailboxWithRole archive = MailboxUtil.find(mailboxes, Role.ARCHIVE);
+                final IdentifiableMailboxWithRole trash = MailboxUtil.find(mailboxes, Role.TRASH);
+                final IdentifiableMailboxWithRole inbox = MailboxUtil.find(mailboxes, Role.INBOX);
                 return moveToInbox(emails, archive, trash, inbox);
             }
         }, MoreExecutors.directExecutor());
@@ -692,9 +688,9 @@ public class Mua {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableMailboxWithRole> mailboxes) throws Exception {
                 Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
-                final IdentifiableMailboxWithRole inbox = MailboxUtils.find(mailboxes, Role.INBOX);
+                final IdentifiableMailboxWithRole inbox = MailboxUtil.find(mailboxes, Role.INBOX);
                 Preconditions.checkState(inbox != null, "Inbox mailbox not found. Calling archive (remove from inbox) on a collection of emails even though there is no inbox does not make sense");
-                final IdentifiableMailboxWithRole archive = MailboxUtils.find(mailboxes, Role.ARCHIVE);
+                final IdentifiableMailboxWithRole archive = MailboxUtil.find(mailboxes, Role.ARCHIVE);
                 return archive(emails, inbox, archive);
             }
         }, MoreExecutors.directExecutor());
@@ -837,7 +833,7 @@ public class Mua {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableMailboxWithRole> mailboxes) throws Exception {
                 Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
-                final IdentifiableMailboxWithRole archive = MailboxUtils.find(mailboxes, Role.ARCHIVE);
+                final IdentifiableMailboxWithRole archive = MailboxUtil.find(mailboxes, Role.ARCHIVE);
                 return removeFromMailbox(emails, mailboxId, archive);
             }
         }, MoreExecutors.directExecutor());
@@ -855,7 +851,7 @@ public class Mua {
             @Override
             public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableMailboxWithRole> mailboxes) {
                 Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
-                return moveToTrash(emails, MailboxUtils.find(mailboxes, Role.TRASH));
+                return moveToTrash(emails, MailboxUtil.find(mailboxes, Role.TRASH));
             }
         }, MoreExecutors.directExecutor());
     }

@@ -39,7 +39,7 @@ import rs.ltt.jmap.common.entity.filter.EmailFilterCondition;
 import rs.ltt.jmap.mua.Mua;
 import rs.ltt.jmap.mua.SetEmailException;
 import rs.ltt.jmap.mua.Status;
-import rs.ltt.jmap.mua.util.MailboxUtils;
+import rs.ltt.jmap.mua.util.MailboxUtil;
 
 import java.io.IOException;
 import java.lang.Thread;
@@ -67,6 +67,11 @@ public class Main {
     private static EmailQuery currentQuery;
 
     public static void main(String... args) {
+
+        String test = "12";
+
+        System.err.println("substring "+test.substring(0));
+
         if (args.length != 2) {
             System.err.println("java -jar lttrs-cli.jar username password");
             System.exit(1);
@@ -92,7 +97,7 @@ public class Main {
                     try {
                         loadingMessage(screen, "Loading mailboxes…");
                         mua.refreshMailboxes().get();
-                        inbox = MailboxUtils.find(myInMemoryCache.getMailboxes(), Role.INBOX);
+                        inbox = MailboxUtil.find(myInMemoryCache.getMailboxes(), Role.INBOX);
                         loadingMessage(screen, "Loading identities…");
                         mua.refreshIdentities().get();
 
@@ -324,7 +329,7 @@ public class Main {
                 .subject("This is a test")
                 .bodyValue(partId, emailBodyValue)
                 .textBody(emailBodyPart)
-                .mailboxId(MailboxUtils.find(myInMemoryCache.getMailboxes(), Role.INBOX).getId(), true)
+                .mailboxId(MailboxUtil.find(myInMemoryCache.getMailboxes(), Role.INBOX).getId(), true)
                 .build();
         ListenableFuture<Boolean> future;
         if (sendImmediately) {

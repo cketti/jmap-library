@@ -14,7 +14,7 @@
  *
  */
 
-package rs.ltt.jmap.mua.entity;
+package rs.ltt.jmap.mua.util;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;

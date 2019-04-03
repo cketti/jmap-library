@@ -20,8 +20,8 @@ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 import rs.ltt.jmap.common.entity.Thread;
 import rs.ltt.jmap.common.entity.*;
-import rs.ltt.jmap.mua.entity.QueryResultItem;
 import rs.ltt.jmap.mua.util.QueryResult;
+import rs.ltt.jmap.mua.util.QueryResultItem;
 
 import java.util.Collection;
 
@@ -69,9 +69,9 @@ public interface Cache {
 
     //Queries
 
-    void setQueryResult(String queryString, QueryResult<Email> queryResult) throws CacheWriteException;
+    void setQueryResult(String queryString, QueryResult queryResult) throws CacheWriteException;
 
-    void addQueryResult(String queryString, QueryResult<Email> queryResult) throws CacheWriteException, CacheConflictException;
+    void addQueryResult(String queryString, QueryResult queryResult) throws CacheWriteException, CacheConflictException;
 
     void updateQueryResults(String query, QueryUpdate<Email, QueryResultItem> update, TypedState<Email> emailState) throws CacheWriteException, CacheConflictException;
 

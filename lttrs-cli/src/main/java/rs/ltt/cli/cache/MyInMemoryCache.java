@@ -22,7 +22,7 @@ import rs.ltt.jmap.common.entity.*;
 import rs.ltt.jmap.common.entity.Thread;
 import rs.ltt.jmap.mua.cache.InMemoryCache;
 import rs.ltt.jmap.mua.cache.NotSynchronizedException;
-import rs.ltt.jmap.mua.entity.QueryResultItem;
+import rs.ltt.jmap.mua.util.QueryResultItem;
 
 import java.util.*;
 
