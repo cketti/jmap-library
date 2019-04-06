@@ -13,30 +13,46 @@
  * limitations under the License.
  */
 
-package rs.ltt.android.util;
+package rs.ltt.jmap.mua.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 public class EmailAddressUtil {
 
+    private static final List<String> STOP_WORDS = Arrays.asList("the");
+
      public static String shorten(String input) {
-        String[] parts = removeInitials(input.split("\\s"));
-        if (parts.length == 0 || parts[0].length() <= 3) {
+        String[] parts = removeInvalidShorts(input.split("\\s"));
+        if (parts.length == 0) {
             return input;
         } else {
             return parts[0];
         }
     }
 
-    private static String[] removeInitials(String[] input) {
+    private static String[] removeInvalidShorts(String[] input) {
         ArrayList<String> output = new ArrayList<>(input.length);
         for(String part : input) {
-            if (part.length() == 1 || (part.length() == 2 && part.charAt(1) == '.')) {
+            if (isInitial(part)) {
+                continue;
+            }
+            if (isStopWord(part)) {
                 continue;
             }
             output.add(part);
         }
         return output.toArray(new String[0]);
+    }
+
+    private static boolean isInitial(String input) {
+         return input.length() == 1 || (input.length() == 2 && input.charAt(1) == '.');
+    }
+
+    private static boolean isStopWord(String input) {
+         return STOP_WORDS.contains(input.toLowerCase(Locale.US));
     }
 
 }
