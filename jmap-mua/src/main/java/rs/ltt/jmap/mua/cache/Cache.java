@@ -44,19 +44,11 @@ public interface Cache {
 
     Collection<? extends IdentifiableMailboxWithRole> getSpecialMailboxes() throws NotSynchronizedException;
 
-    //Threads
-    //we probably don’t need a getThreads() method since we always access using the Queries
-    void setThreads(TypedState<Thread> state, Thread[] threads);
+    void setThreadsAndEmails(TypedState<Thread> threadState, Thread[] threads, TypedState<Email> emailState, Email[] emails);
 
-    void addThreads(TypedState<Thread> state, Thread[] threads) throws CacheWriteException, CacheConflictException;
+    void addThreadsAndEmail(TypedState<Thread> threadState, Thread[] threads, TypedState<Email> emailState, Email[] emails);
 
     void updateThreads(Update<Thread> threadUpdate) throws CacheWriteException, CacheConflictException;
-
-    //Email
-    //we probably don’t need a getEmail() method since we always access using the Queries
-    void setEmails(TypedState<Email> state, Email[] emails) throws CacheWriteException;
-
-    void addEmails(TypedState<Email> state, Email[] emails) throws CacheWriteException, CacheConflictException;
 
     void updateEmails(Update<Email> emailUpdate, String[] updatedProperties) throws CacheWriteException, CacheConflictException;
 

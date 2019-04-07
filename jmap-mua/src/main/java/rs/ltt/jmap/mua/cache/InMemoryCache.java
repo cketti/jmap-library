@@ -132,7 +132,18 @@ public class InMemoryCache implements Cache {
     }
 
     @Override
-    public void setThreads(final TypedState<Thread> typedState, Thread[] threads) {
+    public void setThreadsAndEmails(TypedState<Thread> threadState, Thread[] threads, TypedState<Email> emailState, Email[] emails) {
+        setThreads(threadState, threads);
+        setEmails(emailState, emails);
+    }
+
+    @Override
+    public void addThreadsAndEmail(TypedState<Thread> threadState, Thread[] threads, TypedState<Email> emailState, Email[] emails) {
+        addThreads(threadState, threads);
+        addEmails(emailState, emails);
+    }
+
+    private void setThreads(final TypedState<Thread> typedState, Thread[] threads) {
         synchronized (this.threads) {
             this.threads.clear();
             for (Thread thread : threads) {
@@ -142,8 +153,7 @@ public class InMemoryCache implements Cache {
         }
     }
 
-    @Override
-    public void addThreads(final TypedState<Thread> typedState, final Thread[] threads) throws CacheConflictException {
+    private void addThreads(final TypedState<Thread> typedState, final Thread[] threads) throws CacheConflictException {
         synchronized (this.threads) {
             if (typedState.getState() == null || !typedState.getState().equals(this.threadState)) {
                 throw new CacheConflictException(String.format("Trying to add threads with an outdated state. Run update first. Cached state=%s. Your state=%s", this.threadState, typedState.getState()));
@@ -180,8 +190,7 @@ public class InMemoryCache implements Cache {
         }
     }
 
-    @Override
-    public void setEmails(TypedState<Email> typedState, Email[] emails) {
+    private void setEmails(TypedState<Email> typedState, Email[] emails) {
         synchronized (this.emails) {
             this.emails.clear();
             for (Email email : emails) {
@@ -191,8 +200,7 @@ public class InMemoryCache implements Cache {
         }
     }
 
-    @Override
-    public void addEmails(TypedState<Email> typedState, Email[] emails) throws CacheConflictException {
+    private void addEmails(TypedState<Email> typedState, Email[] emails) throws CacheConflictException {
         synchronized (this.emails) {
             if (typedState.getState() == null || !typedState.getState().equals(this.emailState)) {
                 throw new CacheConflictException(String.format("Trying to add emails with an outdated state. Run update first. Cached state=%s. Your state=%s", this.emailState, typedState.getState()));

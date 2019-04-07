@@ -1162,16 +1162,16 @@ public class Mua {
         final ListenableFuture<MethodResponses> getThreadIdsResponsesFuture = multiCall.add(getThreadIdsInvocation);
 
 
-        final Optional<ListenableFuture<MethodResponses>> getThreadsResponsesFutureOptional;
-        final Optional<ListenableFuture<MethodResponses>> getEmailResponsesFutureOptional;
+        final ListenableFuture<MethodResponses> getThreadsResponsesFuture;
+        final ListenableFuture<MethodResponses> getEmailResponsesFuture;
         if (queryStateWrapper.objectsState.threadState == null && queryStateWrapper.objectsState.emailState == null) {
             Request.Invocation getThreadsInvocation = Request.Invocation.create(new GetThreadMethodCall(getThreadIdsInvocation.createReference(Request.Invocation.ResultReference.Path.LIST_THREAD_IDS)));
             Request.Invocation getEmailInvocation = Request.Invocation.create(new GetEmailMethodCall(getThreadsInvocation.createReference(Request.Invocation.ResultReference.Path.LIST_EMAIL_IDS), true));
-            getThreadsResponsesFutureOptional = Optional.of(multiCall.add(getThreadsInvocation));
-            getEmailResponsesFutureOptional = Optional.of(multiCall.add(getEmailInvocation));
+            getThreadsResponsesFuture = multiCall.add(getThreadsInvocation);
+            getEmailResponsesFuture = multiCall.add(getEmailInvocation);
         } else {
-            getThreadsResponsesFutureOptional = Optional.absent();
-            getEmailResponsesFutureOptional = Optional.absent();
+            getThreadsResponsesFuture = null;
+            getEmailResponsesFuture = null;
         }
 
         multiCall.execute();
@@ -1190,13 +1190,10 @@ public class Mua {
                     //  3) store query results; If query cache sees an outdated email state it will fail
                     transform(piggyBackedFuturesList).get();
 
-                    if (getThreadsResponsesFutureOptional.isPresent()) {
-                        GetThreadMethodResponse getThreadsResponse = getThreadsResponsesFutureOptional.get().get().getMain(GetThreadMethodResponse.class);
-                        cache.setThreads(getThreadsResponse.getTypedState(), getThreadsResponse.getList());
-                    }
-                    if (getEmailResponsesFutureOptional.isPresent()) {
-                        GetEmailMethodResponse getEmailResponse = getEmailResponsesFutureOptional.get().get().getMain(GetEmailMethodResponse.class);
-                        cache.setEmails(getEmailResponse.getTypedState(), getEmailResponse.getList());
+                    if (getThreadsResponsesFuture != null && getEmailResponsesFuture != null) {
+                        GetThreadMethodResponse getThreadsResponse = getThreadsResponsesFuture.get().getMain(GetThreadMethodResponse.class);
+                        GetEmailMethodResponse getEmailResponse = getEmailResponsesFuture.get().getMain(GetEmailMethodResponse.class);
+                        cache.setThreadsAndEmails(getThreadsResponse.getTypedState(), getThreadsResponse.getList(), getEmailResponse.getTypedState(), getEmailResponse.getList());
                     }
 
                     if (queryResult.position != 0) {
@@ -1205,7 +1202,7 @@ public class Mua {
 
                     cache.setQueryResult(query.toQueryString(), queryResult);
 
-                    if (getEmailResponsesFutureOptional.isPresent() && getEmailResponsesFutureOptional.isPresent()) {
+                    if (getThreadsResponsesFuture != null && getEmailResponsesFuture != null) {
                         settableFuture.set(Status.UPDATED);
                     } else {
                         List<ListenableFuture<Status>> list = new ArrayList<>();
@@ -1260,10 +1257,8 @@ public class Mua {
                     }
 
                     GetThreadMethodResponse getThreadMethodResponse = getThreadsResponsesFuture.get().getMain(GetThreadMethodResponse.class);
-                    cache.addThreads(getThreadMethodResponse.getTypedState(), getThreadMethodResponse.getList());
-
                     GetEmailMethodResponse getEmailMethodResponse = getEmailsResponsesFuture.get().getMain(GetEmailMethodResponse.class);
-                    cache.addEmails(getEmailMethodResponse.getTypedState(), getEmailMethodResponse.getList());
+                    cache.addThreadsAndEmail(getThreadMethodResponse.getTypedState(), getThreadMethodResponse.getList(), getEmailMethodResponse.getTypedState(), getEmailMethodResponse.getList());
 
                     settableFuture.set(Status.UPDATED);
 
