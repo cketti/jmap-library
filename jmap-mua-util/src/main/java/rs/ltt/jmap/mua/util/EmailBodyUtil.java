@@ -112,7 +112,8 @@ public class EmailBodyUtil {
 
             int lastLineLength = max;
 
-            boolean breakNextBlock = false;
+            boolean breakNextBlockUnderscore = false;
+            boolean breakNextBlockHyphen = false;
             boolean skipNextBreak = false;
             StringBuilder stringBuilder = new StringBuilder();
             for (String line : this.lines) {
@@ -123,7 +124,7 @@ public class EmailBodyUtil {
                     boolean listItem = (firstWord.length() <= 3 && (firstWord.endsWith(")") || firstWord.endsWith(":"))) || line.startsWith("* ") || line.startsWith("- ") || (firstWord.matches("\\[[0-9]+]:"));
                     if (skipNextBreak) {
                         //do nothing
-                    } else if (breakNextBlock) {
+                    } else if (breakNextBlockUnderscore || breakNextBlockHyphen) {
                         stringBuilder.append('\n');
                     } else if (line.isEmpty()) {
                         stringBuilder.append('\n');
@@ -142,8 +143,10 @@ public class EmailBodyUtil {
                 }
 
                 skipNextBreak |= line.endsWith(" ");
-                final boolean blockBoundary = line.matches("_{2,}");
-                breakNextBlock = (breakNextBlock && !line.isEmpty() && !blockBoundary) || (blockBoundary && !breakNextBlock);
+                final boolean blockBoundaryUnderscore = line.matches("_{2,}");
+                final boolean blockBoundaryHypen = line.matches("-{2,}");
+                breakNextBlockUnderscore = (breakNextBlockUnderscore && !line.isEmpty() && !blockBoundaryUnderscore) || (blockBoundaryUnderscore && !breakNextBlockUnderscore);
+                breakNextBlockHyphen = (breakNextBlockHyphen && !line.isEmpty() && !blockBoundaryHypen) || (blockBoundaryHypen && !breakNextBlockHyphen);
                 stringBuilder.append(line);
             }
             return stringBuilder.toString();
