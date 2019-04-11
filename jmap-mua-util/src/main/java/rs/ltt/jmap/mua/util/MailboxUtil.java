@@ -18,6 +18,7 @@ package rs.ltt.jmap.mua.util;
 
 import com.google.common.base.CaseFormat;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import rs.ltt.jmap.common.entity.IdentifiableEmailWithMailboxIds;
 import rs.ltt.jmap.common.entity.IdentifiableMailboxWithRole;
 import rs.ltt.jmap.common.entity.Mailbox;
 import rs.ltt.jmap.common.entity.Role;
@@ -38,5 +39,14 @@ public class MailboxUtil {
 
     public static Mailbox create(Role role) {
         return Mailbox.builder().role(role).name(CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, role.toString())).build();
+    }
+
+    public static boolean anyIn(Collection<? extends IdentifiableEmailWithMailboxIds> emails, String mailboxId) {
+        for(IdentifiableEmailWithMailboxIds email : emails) {
+            if (email.getMailboxIds().containsKey(mailboxId)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
