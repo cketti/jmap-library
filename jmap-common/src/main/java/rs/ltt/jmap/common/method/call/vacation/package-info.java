@@ -14,19 +14,8 @@
  *
  */
 
-package rs.ltt.jmap.common.method.call.standard;
+@JmapNamespace(Namespace.MAIL)
+package rs.ltt.jmap.common.method.call.vacation;
 
-import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
-import rs.ltt.jmap.common.method.MethodCall;
-
-public abstract class ChangesMethodCall<T extends AbstractIdentifiableEntity> implements MethodCall {
-
-    private String accountId;
-    private String sinceState;
-    private Integer maxChanges;
-
-    public ChangesMethodCall(String sinceState) {
-        this.sinceState = sinceState;
-    }
-
-}
+import rs.ltt.jmap.Namespace;
+import rs.ltt.jmap.annotation.JmapNamespace;

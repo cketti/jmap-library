@@ -14,19 +14,12 @@
  *
  */
 
-package rs.ltt.jmap.common.method.call.standard;
+package rs.ltt.jmap.common.method.response.vacation;
 
-import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
-import rs.ltt.jmap.common.method.MethodCall;
+import rs.ltt.jmap.annotation.JmapMethod;
+import rs.ltt.jmap.common.entity.VacationResponse;
+import rs.ltt.jmap.common.method.response.standard.SetMethodResponse;
 
-public abstract class ChangesMethodCall<T extends AbstractIdentifiableEntity> implements MethodCall {
-
-    private String accountId;
-    private String sinceState;
-    private Integer maxChanges;
-
-    public ChangesMethodCall(String sinceState) {
-        this.sinceState = sinceState;
-    }
-
+@JmapMethod("VacationResponse/set")
+public class SetVacationResponseMethodResponse extends SetMethodResponse<VacationResponse> {
 }

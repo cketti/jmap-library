@@ -14,19 +14,26 @@
  *
  */
 
-package rs.ltt.jmap.common.method.call.standard;
+package rs.ltt.jmap.common.entity;
 
-import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
-import rs.ltt.jmap.common.method.MethodCall;
+import lombok.Builder;
+import lombok.Getter;
 
-public abstract class ChangesMethodCall<T extends AbstractIdentifiableEntity> implements MethodCall {
+import java.util.Date;
 
-    private String accountId;
-    private String sinceState;
-    private Integer maxChanges;
+@Getter
+@Builder(toBuilder = true)
+public class VacationResponse extends AbstractIdentifiableEntity {
 
-    public ChangesMethodCall(String sinceState) {
-        this.sinceState = sinceState;
-    }
+    private Boolean isEnabled;
 
+    private Date fromDate;
+
+    private Date toDate;
+
+    private String subject;
+
+    private String textBody;
+
+    private String htmlBody;
 }
