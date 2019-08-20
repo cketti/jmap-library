@@ -25,6 +25,16 @@
     <version>0.1.0</version>
     <packaging>pom</packaging>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.eluder.coveralls</groupId>
+                <artifactId>coveralls-maven-plugin</artifactId>
+                <version>4.3.0</version>
+            </plugin>
+        </plugins>
+    </build>
+
     <modules>
         <module>jmap-annotation</module>
         <module>jmap-client</module>
