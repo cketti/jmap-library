@@ -27,7 +27,7 @@ import rs.ltt.jmap.gson.JmapAdapters;
 
 import java.io.IOException;
 
-import static rs.ltt.jmap.gson.utils.Mapper.METHOD_CALLS;
+import static rs.ltt.jmap.common.util.Mapper.METHOD_CALLS;
 
 public class RequestInvocationTypeAdapter extends TypeAdapter<Request.Invocation> {
 

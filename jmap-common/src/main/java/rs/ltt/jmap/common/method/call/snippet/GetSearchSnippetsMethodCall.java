@@ -16,9 +16,32 @@
 
 package rs.ltt.jmap.common.method.call.snippet;
 
+import com.google.gson.annotations.SerializedName;
 import rs.ltt.jmap.annotation.JmapMethod;
+import rs.ltt.jmap.common.Request;
+import rs.ltt.jmap.common.entity.Email;
+import rs.ltt.jmap.common.entity.filter.Filter;
 import rs.ltt.jmap.common.method.MethodCall;
 
 @JmapMethod("SearchSnippet/get")
 public class GetSearchSnippetsMethodCall implements MethodCall {
+
+
+    private String accountId;
+    private String[] ids;
+    private Filter filter;
+
+    @SerializedName("#ids")
+    private Request.Invocation.ResultReference idsReference;
+
+    public GetSearchSnippetsMethodCall(Request.Invocation.ResultReference idsReference, Filter<Email> filter) {
+        this.idsReference = idsReference;
+        this.filter = filter;
+    }
+
+    public GetSearchSnippetsMethodCall(String[] ids, Filter<Email> filter) {
+        this.ids = ids;
+        this.filter = filter;
+    }
+
 }

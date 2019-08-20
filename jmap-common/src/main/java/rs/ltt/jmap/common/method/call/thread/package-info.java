@@ -15,7 +15,7 @@
  */
 
 @JmapNamespace(Namespace.MAIL)
-package rs.ltt.jmap.common.method.call.mailbox;
+package rs.ltt.jmap.common.method.call.thread;
 
 import rs.ltt.jmap.Namespace;
 import rs.ltt.jmap.annotation.JmapNamespace;

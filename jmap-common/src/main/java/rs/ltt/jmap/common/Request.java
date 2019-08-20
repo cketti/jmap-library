@@ -16,8 +16,8 @@
 
 package rs.ltt.jmap.common;
 
-import rs.ltt.jmap.annotation.JmapNamespace;
 import rs.ltt.jmap.common.method.MethodCall;
+import rs.ltt.jmap.common.util.Namespace;
 
 import java.security.SecureRandom;
 import java.util.*;
@@ -37,10 +37,8 @@ public class Request {
     private static String getPackageNamespaceFor(Class<? extends MethodCall> clazz) {
         synchronized (PACKAGE_NAMESPACE_CACHE) {
             if (!PACKAGE_NAMESPACE_CACHE.containsKey(clazz)) {
-                Package p = clazz.getPackage();
-                final JmapNamespace namespace = p.getAnnotation(JmapNamespace.class);
-                final String value = namespace == null ? null : namespace.value();
-                PACKAGE_NAMESPACE_CACHE.put(clazz, value);
+                final String value = Namespace.get(clazz);
+                PACKAGE_NAMESPACE_CACHE.put(clazz, Namespace.get(clazz));
                 return value;
             }
             return PACKAGE_NAMESPACE_CACHE.get(clazz);

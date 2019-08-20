@@ -19,19 +19,15 @@ package rs.ltt.jmap.gson.serializer;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
-import rs.ltt.jmap.gson.utils.Mapper;
 import rs.ltt.jmap.common.entity.Capability;
+import rs.ltt.jmap.common.util.Mapper;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 
 public class CapabilitiesSerializer implements JsonSerializer<Map<Class<? extends Capability>, Capability>> {
 
-    private static final ImmutableMap<Class<? extends Capability>,String> CAPABILITIES;
-
-    static {
-        CAPABILITIES = Mapper.get(Capability.class).inverse();
-    }
+    private static final ImmutableMap<Class<? extends Capability>,String> CAPABILITIES = Mapper.CAPABILITIES.inverse();
 
     public static void register(final GsonBuilder builder) {
         Type type = new TypeToken<Map<Class<? extends Capability>, Capability>>() {
@@ -42,10 +38,10 @@ public class CapabilitiesSerializer implements JsonSerializer<Map<Class<? extend
     @Override
     public JsonElement serialize(Map<Class<? extends Capability>, Capability> map, Type type, JsonSerializationContext context) {
         final JsonObject jsonObject = new JsonObject();
-        for(Map.Entry<Class<?extends Capability>, Capability> entry : map.entrySet()) {
-            final Class<?extends Capability> clazz = entry.getKey();
+        for (Map.Entry<Class<? extends Capability>, Capability> entry : map.entrySet()) {
+            final Class<? extends Capability> clazz = entry.getKey();
             final String name = CAPABILITIES.get(clazz);
-            jsonObject.add(name != null ? name : clazz.getSimpleName(),context.serialize(entry.getValue()));
+            jsonObject.add(name != null ? name : clazz.getSimpleName(), context.serialize(entry.getValue()));
         }
         return jsonObject;
     }

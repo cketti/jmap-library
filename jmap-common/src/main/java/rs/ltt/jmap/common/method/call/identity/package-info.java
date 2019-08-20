@@ -14,12 +14,8 @@
  *
  */
 
-package rs.ltt.jmap.common.method.response.identity;
+@JmapNamespace(Namespace.MAIL)
+package rs.ltt.jmap.common.method.call.identity;
 
-import rs.ltt.jmap.annotation.JmapMethod;
-import rs.ltt.jmap.common.entity.Identity;
-import rs.ltt.jmap.common.method.response.standard.SetMethodResponse;
-
-@JmapMethod("Identity/set")
-public class SetIdentityMethodResponse extends SetMethodResponse<Identity> {
-}
+import rs.ltt.jmap.Namespace;
+import rs.ltt.jmap.annotation.JmapNamespace;

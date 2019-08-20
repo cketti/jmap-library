@@ -19,10 +19,11 @@ package rs.ltt.jmap.common.method.call.mailbox;
 import com.google.gson.annotations.SerializedName;
 import rs.ltt.jmap.annotation.JmapMethod;
 import rs.ltt.jmap.common.Request;
+import rs.ltt.jmap.common.entity.Mailbox;
 import rs.ltt.jmap.common.method.call.standard.GetMethodCall;
 
 @JmapMethod("Mailbox/get")
-public class GetMailboxMethodCall extends GetMethodCall {
+public class GetMailboxMethodCall extends GetMethodCall<Mailbox> {
 
     @SerializedName("#properties")
     private Request.Invocation.ResultReference propertiesReference;

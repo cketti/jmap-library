@@ -17,8 +17,22 @@
 package rs.ltt.jmap.common.method.call.mailbox;
 
 import rs.ltt.jmap.annotation.JmapMethod;
-import rs.ltt.jmap.common.method.MethodCall;
+import rs.ltt.jmap.common.entity.Mailbox;
+import rs.ltt.jmap.common.entity.Query;
+import rs.ltt.jmap.common.entity.filter.Filter;
+import rs.ltt.jmap.common.method.call.standard.QueryChangesMethodCall;
 
 @JmapMethod("Mailbox/queryChanges")
-public class QueryChangesMailboxMethodCall implements MethodCall {
+public class QueryChangesMailboxMethodCall extends QueryChangesMethodCall<Mailbox> {
+    public QueryChangesMailboxMethodCall(String sinceQueryState, Filter<Mailbox> filter) {
+        super(sinceQueryState, filter);
+    }
+
+    public QueryChangesMailboxMethodCall(String sinceQueryState, Query<Mailbox> query) {
+        super(sinceQueryState, query);
+    }
+
+    public QueryChangesMailboxMethodCall(String sinceQueryState) {
+        super(sinceQueryState);
+    }
 }

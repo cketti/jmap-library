@@ -18,7 +18,6 @@ package rs.ltt.jmap.common.method.call.thread;
 
 import rs.ltt.jmap.annotation.JmapMethod;
 import rs.ltt.jmap.common.entity.Thread;
-import rs.ltt.jmap.common.method.MethodCall;
 import rs.ltt.jmap.common.method.call.standard.ChangesMethodCall;
 
 @JmapMethod("Thread/changes")

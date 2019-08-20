@@ -70,7 +70,6 @@ public abstract class AbstractJmapApiClient implements JmapApiClient {
                     }
                     final MethodResponse main = methodResponses.getMain();
                     if (main instanceof MethodErrorResponse) {
-                        System.out.println(((MethodErrorResponse) main).getType());
                         future.setException(new MethodErrorResponseException((MethodErrorResponse) main, methodResponses.getAdditional()));
                     } else {
                         future.set(methodResponses);

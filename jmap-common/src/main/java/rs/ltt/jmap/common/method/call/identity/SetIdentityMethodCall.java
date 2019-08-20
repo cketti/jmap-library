@@ -14,29 +14,29 @@
  *
  */
 
-package rs.ltt.jmap.common.method.call.mailbox;
+package rs.ltt.jmap.common.method.call.identity;
 
 import rs.ltt.jmap.annotation.JmapMethod;
-import rs.ltt.jmap.common.entity.Mailbox;
+import rs.ltt.jmap.common.entity.Identity;
 import rs.ltt.jmap.common.method.call.standard.SetMethodCall;
 
 import java.util.Map;
 
-@JmapMethod("Mailbox/set")
-public class SetMailboxMethodCall extends SetMethodCall<Mailbox> {
-    public SetMailboxMethodCall(String accountId, String ifInState, Map<String, Mailbox> create, Map<String, Map<String, Object>> update, String[] destroy) {
+@JmapMethod("Identity/set")
+public class SetIdentityMethodCall extends SetMethodCall<Identity> {
+    public SetIdentityMethodCall(String accountId, String ifInState, Map<String, Identity> create, Map<String, Map<String, Object>> update, String[] destroy) {
         super(accountId, ifInState, create, update, destroy);
     }
 
-    public SetMailboxMethodCall(String ifInState, String[] destroy) {
+    public SetIdentityMethodCall(String ifInState, String[] destroy) {
         super(ifInState, destroy);
     }
 
-    public SetMailboxMethodCall(String ifInState, Map<String, Map<String, Object>> update) {
+    public SetIdentityMethodCall(String ifInState, Map<String, Map<String, Object>> update) {
         super(ifInState, update);
     }
 
-    public SetMailboxMethodCall(Map<String, Mailbox> create) {
+    public SetIdentityMethodCall(Map<String, Identity> create) {
         super(create);
     }
 }

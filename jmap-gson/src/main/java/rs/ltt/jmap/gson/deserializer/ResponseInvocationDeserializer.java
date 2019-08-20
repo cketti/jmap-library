@@ -16,9 +16,8 @@
 
 package rs.ltt.jmap.gson.deserializer;
 
-import com.google.common.collect.ImmutableBiMap;
 import com.google.gson.*;
-import rs.ltt.jmap.gson.utils.Mapper;
+import rs.ltt.jmap.common.util.Mapper;
 import rs.ltt.jmap.common.Response;
 import rs.ltt.jmap.common.method.MethodErrorResponse;
 import rs.ltt.jmap.common.method.MethodResponse;
@@ -26,14 +25,6 @@ import rs.ltt.jmap.common.method.MethodResponse;
 import java.lang.reflect.Type;
 
 public class ResponseInvocationDeserializer implements JsonDeserializer<Response.Invocation> {
-
-    private static final ImmutableBiMap<String, Class<? extends MethodResponse>> METHOD_RESPONSES;
-    private static final ImmutableBiMap<String, Class<? extends MethodErrorResponse>> METHOD_ERROR_RESPONSES;
-
-    static {
-        METHOD_RESPONSES = Mapper.get(MethodResponse.class);
-        METHOD_ERROR_RESPONSES = Mapper.get(MethodErrorResponse.class);
-    }
 
     public static void register(final GsonBuilder builder) {
         builder.registerTypeAdapter(Response.Invocation.class, new ResponseInvocationDeserializer());
@@ -60,10 +51,10 @@ public class ResponseInvocationDeserializer implements JsonDeserializer<Response
         if ("error".equals(name)) {
             final JsonObject jsonObject = parameter.getAsJsonObject();
             final String errorType = jsonObject.get("type").getAsString();
-            Class<? extends MethodErrorResponse> customErrorClazz = METHOD_ERROR_RESPONSES.get(errorType);
+            Class<? extends MethodErrorResponse> customErrorClazz = Mapper.METHOD_ERROR_RESPONSES.get(errorType);
             clazz = customErrorClazz != null ? customErrorClazz : MethodErrorResponse.class;
         } else {
-            clazz = METHOD_RESPONSES.get(name);
+            clazz = Mapper.METHOD_RESPONSES.get(name);
         }
         if (clazz == null) {
             throw new JsonParseException("Unknown method response '"+name+"'");

@@ -19,19 +19,13 @@ package rs.ltt.jmap.gson.deserializer;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
-import rs.ltt.jmap.gson.utils.Mapper;
+import rs.ltt.jmap.common.util.Mapper;
 import rs.ltt.jmap.common.entity.Capability;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 
 public class CapabilitiesDeserializer implements JsonDeserializer<Map<Class<? extends Capability>, Capability>> {
-
-    private static final ImmutableMap<String, Class<? extends Capability>> CAPABILITIES;
-
-    static {
-        CAPABILITIES = Mapper.get(Capability.class);
-    }
 
     public static void register(final GsonBuilder builder) {
         Type type = new TypeToken<Map<Class<? extends Capability>, Capability>>() {
@@ -44,7 +38,7 @@ public class CapabilitiesDeserializer implements JsonDeserializer<Map<Class<? ex
         ImmutableMap.Builder<Class<? extends Capability>, Capability> builder = new ImmutableMap.Builder<>();
         for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
             final String namespace = entry.getKey();
-            final Class<? extends Capability> clazz = CAPABILITIES.get(namespace);
+            final Class<? extends Capability> clazz = Mapper.CAPABILITIES.get(namespace);
             if (clazz == null) {
                 continue;
             }

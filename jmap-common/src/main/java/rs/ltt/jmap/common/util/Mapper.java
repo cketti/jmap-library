@@ -14,11 +14,15 @@
  *
  */
 
-package rs.ltt.jmap.gson.utils;
+package rs.ltt.jmap.common.util;
 
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableMap;
 import rs.ltt.jmap.common.Utils;
+import rs.ltt.jmap.common.entity.Capability;
 import rs.ltt.jmap.common.method.MethodCall;
+import rs.ltt.jmap.common.method.MethodErrorResponse;
+import rs.ltt.jmap.common.method.MethodResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,8 +35,11 @@ public final class Mapper {
     }
 
     public static final ImmutableBiMap<String, Class<? extends MethodCall>> METHOD_CALLS = Mapper.get(MethodCall.class);
+    public static final ImmutableBiMap<String, Class<? extends MethodResponse>> METHOD_RESPONSES = Mapper.get(MethodResponse.class);
+    public static final ImmutableBiMap<String, Class<? extends MethodErrorResponse>> METHOD_ERROR_RESPONSES = Mapper.get(MethodErrorResponse.class);
+    public static final ImmutableBiMap<String, Class<? extends Capability>> CAPABILITIES = Mapper.get(Capability.class);
 
-    public static <T> ImmutableBiMap<String, Class<? extends T>> get(Class<T> type) {
+    private static <T> ImmutableBiMap<String, Class<? extends T>> get(Class<T> type) {
         final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(Mapper.class.getClassLoader().getResourceAsStream(Utils.getFilenameFor(type))));
         final ImmutableBiMap.Builder<String, Class<? extends T>> builder = new ImmutableBiMap.Builder<>();
         try {

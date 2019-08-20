@@ -19,7 +19,6 @@ package rs.ltt.jmap.common.method.call.email;
 import rs.ltt.jmap.annotation.JmapMethod;
 import rs.ltt.jmap.common.Request;
 import rs.ltt.jmap.common.entity.Email;
-import rs.ltt.jmap.common.method.MethodCall;
 import rs.ltt.jmap.common.method.call.standard.GetMethodCall;
 
 @JmapMethod("Email/get")

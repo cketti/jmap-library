@@ -18,11 +18,11 @@ package rs.ltt.jmap.common.method.call.thread;
 
 import rs.ltt.jmap.annotation.JmapMethod;
 import rs.ltt.jmap.common.Request;
-import rs.ltt.jmap.common.method.MethodCall;
+import rs.ltt.jmap.common.entity.Thread;
 import rs.ltt.jmap.common.method.call.standard.GetMethodCall;
 
 @JmapMethod("Thread/get")
-public class GetThreadMethodCall extends GetMethodCall {
+public class GetThreadMethodCall extends GetMethodCall<Thread> {
     
     public GetThreadMethodCall(Request.Invocation.ResultReference resultReference) {
         super(resultReference);
