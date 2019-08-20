@@ -32,8 +32,6 @@ public final class Mapper {
 
     public static final ImmutableBiMap<String, Class<? extends MethodCall>> METHOD_CALLS = Mapper.get(MethodCall.class);
 
-    //TODO immutable instance holder?
-
     public static <T> ImmutableBiMap<String, Class<? extends T>> get(Class<T> type) {
         final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(Mapper.class.getClassLoader().getResourceAsStream(Utils.getFilenameFor(type))));
         final ImmutableBiMap.Builder<String, Class<? extends T>> builder = new ImmutableBiMap.Builder<>();

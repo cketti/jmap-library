@@ -56,14 +56,14 @@ public abstract class QueryMethodCall<T extends AbstractIdentifiableEntity> impl
         this.filter = query.filter;
         this.sort = query.comparators;
         this.anchor = afterId;
-        this.anchorOffset = -1; //cyrus needs -1 while i expect it to be 1
+        this.anchorOffset = 1;
     }
 
     public QueryMethodCall(Query<T> query, String afterId, Integer limit) {
         this.filter = query.filter;
         this.sort = query.comparators;
         this.anchor = afterId;
-        this.anchorOffset = -1; //cyrus needs -1 while i expect it to be 1
+        this.anchorOffset = 1;
         this.limit = limit;
     }
 
