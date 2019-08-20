@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rs.ltt.cli.cache.MyInMemoryCache;
 import rs.ltt.cli.model.QueryViewItem;
+import rs.ltt.jmap.client.api.MethodErrorResponseException;
 import rs.ltt.jmap.client.api.UnauthorizedException;
 import rs.ltt.jmap.common.entity.*;
 import rs.ltt.jmap.common.entity.filter.EmailFilterCondition;
@@ -67,11 +68,6 @@ public class Main {
     private static EmailQuery currentQuery;
 
     public static void main(String... args) {
-
-        String test = "12";
-
-        System.err.println("substring "+test.substring(0));
-
         if (args.length != 2) {
             System.err.println("java -jar lttrs-cli.jar username password");
             System.exit(1);
@@ -100,12 +96,14 @@ public class Main {
                         inbox = MailboxUtil.find(myInMemoryCache.getMailboxes(), Role.INBOX);
                         loadingMessage(screen, "Loading identities…");
                         mua.refreshIdentities().get();
-
                     } catch (Exception e) {
                         if (e instanceof ExecutionException) {
                             Throwable cause = e.getCause();
                             if (cause instanceof UnauthorizedException) {
                                 loadingMessage(screen, "Unauthorized");
+                                return;
+                            } else if (cause instanceof MethodErrorResponseException) {
+                                loadingMessage(screen, ((MethodErrorResponseException) cause).getMethodErrorResponse().getClass().getName());
                                 return;
                             }
                         }
