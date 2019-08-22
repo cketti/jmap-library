@@ -3,9 +3,11 @@ package rs.ltt.jmap.common;
 import org.junit.Assert;
 import org.junit.Test;
 import rs.ltt.jmap.common.entity.Email;
-import rs.ltt.jmap.common.entity.filter.EmailFilterCondition;
-import rs.ltt.jmap.common.entity.filter.Filter;
-import rs.ltt.jmap.common.entity.filter.FilterOperator;
+import rs.ltt.jmap.common.entity.EmailSubmission;
+import rs.ltt.jmap.common.entity.UndoStatus;
+import rs.ltt.jmap.common.entity.filter.*;
+import rs.ltt.jmap.common.entity.query.EmailSubmissionQuery;
+import rs.ltt.jmap.common.entity.query.MailboxQuery;
 
 public class QueryStringTest {
 
@@ -48,5 +50,62 @@ public class QueryStringTest {
                 EmailFilterCondition.builder().inMailboxOtherThan(new String[]{"trash", "spam"}).build()
         );
         Assert.assertEquals(a.toQueryString(), b.toQueryString());
+    }
+
+    @Test
+    public void complexMailboxFilterQueryString() {
+        MailboxQuery a = MailboxQuery.of(
+                FilterOperator.or(
+                        MailboxFilterCondition.builder().hasAnyRole(true).build(),
+                        MailboxFilterCondition.builder().name("Inbox").build(),
+                        FilterOperator.and(
+                                MailboxFilterCondition.builder().isSubscribed(true).build(),
+                                MailboxFilterCondition.builder().parentId("1").build()
+                        )
+                )
+        );
+        MailboxQuery b = MailboxQuery.of(
+                FilterOperator.or(
+                        MailboxFilterCondition.builder().name("Inbox").build(),
+                        FilterOperator.and(
+                                MailboxFilterCondition.builder().parentId("1").build(),
+                                MailboxFilterCondition.builder().isSubscribed(true).build()
+                        ),
+                        MailboxFilterCondition.builder().hasAnyRole(true).build()
+                )
+        );
+        Assert.assertEquals(a.toQueryString(), b.toQueryString());
+    }
+
+    @Test
+    public void complexEmailSubmissionQueryString() {
+        EmailSubmissionQuery a = EmailSubmissionQuery.of(
+                FilterOperator.or(
+                        EmailSubmissionFilterCondition.builder().undoStatus(UndoStatus.FINAL).build(),
+                        EmailSubmissionFilterCondition.builder().undoStatus(UndoStatus.PENDING).build(),
+                        FilterOperator.or(
+                                EmailSubmissionFilterCondition.builder().emailIds(new String[]{"1","2","3"}).build(),
+                                EmailSubmissionFilterCondition.builder().emailIds(new String[]{"4","5"}).build()
+                        )
+                )
+        );
+        EmailSubmissionQuery b = EmailSubmissionQuery.of(
+                FilterOperator.or(
+                        FilterOperator.or(
+                                EmailSubmissionFilterCondition.builder().emailIds(new String[]{"4","5"}).build(),
+                                EmailSubmissionFilterCondition.builder().emailIds(new String[]{"1","2","3"}).build()
+                        ),
+                        EmailSubmissionFilterCondition.builder().undoStatus(UndoStatus.PENDING).build(),
+                        EmailSubmissionFilterCondition.builder().undoStatus(UndoStatus.FINAL).build()
+                )
+        );
+        Assert.assertEquals(a.toQueryString(), b.toQueryString());
+    }
+
+    @Test
+    public void simpleNotMatchEmailSubmissionQuery() {
+        EmailSubmissionQuery a = EmailSubmissionQuery.of(EmailSubmissionFilterCondition.builder().undoStatus(UndoStatus.PENDING).build());
+        EmailSubmissionQuery b = EmailSubmissionQuery.of(EmailSubmissionFilterCondition.builder().undoStatus(UndoStatus.CANCELED).build());
+        Assert.assertNotEquals(a.toQueryString(), b.toQueryString());
     }
 }

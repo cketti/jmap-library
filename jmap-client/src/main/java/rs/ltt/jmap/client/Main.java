@@ -30,8 +30,6 @@ import rs.ltt.jmap.common.method.response.email.GetEmailMethodResponse;
 import rs.ltt.jmap.common.method.response.email.QueryChangesEmailMethodResponse;
 import rs.ltt.jmap.common.method.response.email.QueryEmailMethodResponse;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.Future;
 
 

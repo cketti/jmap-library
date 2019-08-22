@@ -16,6 +16,7 @@
 
 package rs.ltt.jmap.common.entity.filter;
 
+import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
 import rs.ltt.jmap.common.util.IndexableStringUtils;
 
@@ -34,14 +35,17 @@ public class FilterOperator<T extends AbstractIdentifiableEntity> implements Fil
 
     }
 
+    @SafeVarargs
     public static <T extends AbstractIdentifiableEntity> FilterOperator<T> and(Filter<T>... filters) {
         return new FilterOperator<>(filters, Operator.AND);
     }
 
+    @SafeVarargs
     public static <T extends AbstractIdentifiableEntity> FilterOperator<T> or(Filter<T>... filters) {
         return new FilterOperator<>(filters, Operator.OR);
     }
 
+    @SafeVarargs
     public static <T extends AbstractIdentifiableEntity> FilterOperator<T> not(Filter<T>... filters) {
         return new FilterOperator<>(filters, Operator.NOT);
     }
@@ -52,7 +56,7 @@ public class FilterOperator<T extends AbstractIdentifiableEntity> implements Fil
     }
 
     @Override
-    public int compareTo(Filter<T> filter) {
+    public int compareTo(@NonNullDecl Filter<T> filter) {
         if (filter instanceof FilterOperator) {
             return 0;
         } else {

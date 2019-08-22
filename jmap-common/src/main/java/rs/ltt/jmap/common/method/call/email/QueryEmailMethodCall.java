@@ -18,8 +18,7 @@ package rs.ltt.jmap.common.method.call.email;
 
 import rs.ltt.jmap.annotation.JmapMethod;
 import rs.ltt.jmap.common.entity.Email;
-import rs.ltt.jmap.common.entity.EmailQuery;
-import rs.ltt.jmap.common.entity.Query;
+import rs.ltt.jmap.common.entity.query.EmailQuery;
 import rs.ltt.jmap.common.entity.filter.Filter;
 import rs.ltt.jmap.common.method.call.standard.QueryMethodCall;
 
@@ -27,7 +26,6 @@ import rs.ltt.jmap.common.method.call.standard.QueryMethodCall;
 public class QueryEmailMethodCall extends QueryMethodCall<Email> {
 
     private Boolean collapseThreads;
-
 
     public QueryEmailMethodCall() {
         super();
@@ -39,21 +37,21 @@ public class QueryEmailMethodCall extends QueryMethodCall<Email> {
 
     public QueryEmailMethodCall(EmailQuery query) {
         super(query);
-        collapseThreads = query.collapseThreads;
+        this.collapseThreads = query.collapseThreads;
     }
 
     public QueryEmailMethodCall(EmailQuery query, Integer limit) {
         super(query, limit);
-        collapseThreads = query.collapseThreads;
+        this.collapseThreads = query.collapseThreads;
     }
 
     public QueryEmailMethodCall(EmailQuery query, String afterEmailId) {
         super(query, afterEmailId);
-        collapseThreads = query.collapseThreads;
+        this.collapseThreads = query.collapseThreads;
     }
 
     public QueryEmailMethodCall(EmailQuery query, String afterEmailId, Integer limit) {
         super(query, afterEmailId, limit);
-        collapseThreads = query.collapseThreads;
+        this.collapseThreads = query.collapseThreads;
     }
 }

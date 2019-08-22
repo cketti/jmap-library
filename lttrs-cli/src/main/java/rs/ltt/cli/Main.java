@@ -37,6 +37,7 @@ import rs.ltt.jmap.client.api.MethodErrorResponseException;
 import rs.ltt.jmap.client.api.UnauthorizedException;
 import rs.ltt.jmap.common.entity.*;
 import rs.ltt.jmap.common.entity.filter.EmailFilterCondition;
+import rs.ltt.jmap.common.entity.query.EmailQuery;
 import rs.ltt.jmap.mua.Mua;
 import rs.ltt.jmap.mua.SetEmailException;
 import rs.ltt.jmap.mua.Status;

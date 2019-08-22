@@ -22,6 +22,6 @@ public enum UndoStatus {
 
     @SerializedName("pending") PENDING,
     @SerializedName("final") FINAL,
-    @SerializedName("canceled") canceled
+    @SerializedName("canceled") CANCELED
 
 }

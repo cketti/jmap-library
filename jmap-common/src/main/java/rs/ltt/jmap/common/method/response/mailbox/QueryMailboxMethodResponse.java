@@ -14,11 +14,12 @@
  *
  */
 
-package rs.ltt.jmap.common.entity.filter;
+package rs.ltt.jmap.common.method.response.mailbox;
 
-import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
+import rs.ltt.jmap.annotation.JmapMethod;
+import rs.ltt.jmap.common.entity.Mailbox;
+import rs.ltt.jmap.common.method.response.standard.QueryMethodResponse;
 
-public interface Filter<T extends AbstractIdentifiableEntity> extends QueryString, Comparable<Filter<T>> {
-
-
+@JmapMethod("Mailbox/query")
+public class QueryMailboxMethodResponse extends QueryMethodResponse<Mailbox> {
 }

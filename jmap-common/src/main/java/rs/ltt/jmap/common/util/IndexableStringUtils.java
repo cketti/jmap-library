@@ -16,10 +16,13 @@
 
 package rs.ltt.jmap.common.util;
 
+import rs.ltt.jmap.common.entity.Role;
+import rs.ltt.jmap.common.entity.UndoStatus;
 import rs.ltt.jmap.common.entity.filter.QueryString;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 
 public class IndexableStringUtils {
 
@@ -94,4 +97,43 @@ public class IndexableStringUtils {
         }
     }
 
+    public static class BooleanComparator implements Comparator<Boolean> {
+
+        @Override
+        public int compare(Boolean a, Boolean b) {
+            if (a == null && b == null) {
+                return 0;
+            } else if (a != null && b == null) {
+                return 1;
+            } else if (a == null) {
+                return -1;
+            } else {
+                return Boolean.compare(a, b);
+            }
+        }
+    }
+
+    public static class DateComparator implements Comparator<Date> {
+
+        @Override
+        public int compare(Date a, Date b) {
+            if (a == null && b == null) {
+                return 0;
+            } else if (a != null && b == null) {
+                return 1;
+            } else if (a == null) {
+                return -1;
+            } else {
+                return a.compareTo(b);
+            }
+        }
+    }
+
+    public static String nullToEmpty(Role role) {
+        return role == null ? "" : role.toString();
+    }
+
+    public static String nullToEmpty(UndoStatus undoStatus) {
+        return undoStatus == null ? "" : undoStatus.toString();
+    }
 }

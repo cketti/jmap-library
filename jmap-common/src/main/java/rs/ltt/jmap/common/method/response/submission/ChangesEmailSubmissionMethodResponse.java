@@ -14,11 +14,12 @@
  *
  */
 
-package rs.ltt.jmap.common.entity.filter;
+package rs.ltt.jmap.common.method.response.submission;
 
-import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
+import rs.ltt.jmap.annotation.JmapMethod;
+import rs.ltt.jmap.common.entity.EmailSubmission;
+import rs.ltt.jmap.common.method.response.standard.ChangesMethodResponse;
 
-public interface Filter<T extends AbstractIdentifiableEntity> extends QueryString, Comparable<Filter<T>> {
-
-
+@JmapMethod("EmailSubmission/changes")
+public class ChangesEmailSubmissionMethodResponse extends ChangesMethodResponse<EmailSubmission> {
 }

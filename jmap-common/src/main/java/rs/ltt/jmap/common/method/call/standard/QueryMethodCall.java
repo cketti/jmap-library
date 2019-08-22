@@ -18,7 +18,7 @@ package rs.ltt.jmap.common.method.call.standard;
 
 import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
 import rs.ltt.jmap.common.entity.Comparator;
-import rs.ltt.jmap.common.entity.Query;
+import rs.ltt.jmap.common.entity.query.Query;
 import rs.ltt.jmap.common.entity.filter.Filter;
 import rs.ltt.jmap.common.method.MethodCall;
 

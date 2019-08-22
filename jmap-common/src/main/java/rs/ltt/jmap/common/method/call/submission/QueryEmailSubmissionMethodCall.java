@@ -14,19 +14,12 @@
  *
  */
 
-package rs.ltt.jmap.common.entity;
+package rs.ltt.jmap.common.method.call.submission;
 
-import rs.ltt.jmap.common.entity.filter.Filter;
-import rs.ltt.jmap.common.entity.filter.QueryString;
+import rs.ltt.jmap.annotation.JmapMethod;
+import rs.ltt.jmap.common.entity.EmailSubmission;
+import rs.ltt.jmap.common.method.call.standard.QueryMethodCall;
 
-public abstract class Query<T extends AbstractIdentifiableEntity> implements QueryString {
-
-    public final Filter<T> filter;
-
-    public final Comparator[] comparators;
-
-    protected Query(Filter<T> filter, Comparator[] comparators) {
-        this.filter = filter;
-        this.comparators = comparators;
-    }
+@JmapMethod("EmailSubmission/query")
+public class QueryEmailSubmissionMethodCall extends QueryMethodCall<EmailSubmission> {
 }

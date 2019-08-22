@@ -14,29 +14,25 @@
  *
  */
 
-package rs.ltt.jmap.common.method.call.email;
+package rs.ltt.jmap.common.method.call.submission;
 
 import rs.ltt.jmap.annotation.JmapMethod;
-import rs.ltt.jmap.common.entity.Email;
-import rs.ltt.jmap.common.entity.query.EmailQuery;
+import rs.ltt.jmap.common.entity.EmailSubmission;
 import rs.ltt.jmap.common.entity.filter.Filter;
+import rs.ltt.jmap.common.entity.query.Query;
 import rs.ltt.jmap.common.method.call.standard.QueryChangesMethodCall;
 
-@JmapMethod("Email/queryChanges")
-public class QueryChangesEmailMethodCall extends QueryChangesMethodCall<Email> {
-
-    private Boolean collapseThreads;
-
-    public QueryChangesEmailMethodCall(String sinceQueryState, Filter<Email> filter) {
+@JmapMethod("EmailSubmission/queryChanges")
+public class QueryChangesEmailSubmissionMethodCall extends QueryChangesMethodCall<EmailSubmission> {
+    public QueryChangesEmailSubmissionMethodCall(String sinceQueryState, Filter<EmailSubmission> filter) {
         super(sinceQueryState, filter);
     }
 
-    public QueryChangesEmailMethodCall(String sinceQueryState, EmailQuery query) {
+    public QueryChangesEmailSubmissionMethodCall(String sinceQueryState, Query<EmailSubmission> query) {
         super(sinceQueryState, query);
-        this.collapseThreads = query.collapseThreads;
     }
 
-    public QueryChangesEmailMethodCall(String sinceQueryState) {
+    public QueryChangesEmailSubmissionMethodCall(String sinceQueryState) {
         super(sinceQueryState);
     }
 }

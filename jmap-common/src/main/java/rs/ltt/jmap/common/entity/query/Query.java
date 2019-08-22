@@ -14,11 +14,21 @@
  *
  */
 
-package rs.ltt.jmap.common.entity.filter;
+package rs.ltt.jmap.common.entity.query;
 
 import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
+import rs.ltt.jmap.common.entity.Comparator;
+import rs.ltt.jmap.common.entity.filter.Filter;
+import rs.ltt.jmap.common.entity.filter.QueryString;
 
-public interface Filter<T extends AbstractIdentifiableEntity> extends QueryString, Comparable<Filter<T>> {
+public abstract class Query<T extends AbstractIdentifiableEntity> implements QueryString {
 
+    public final Filter<T> filter;
 
+    public final Comparator[] comparators;
+
+    protected Query(Filter<T> filter, Comparator[] comparators) {
+        this.filter = filter;
+        this.comparators = comparators;
+    }
 }

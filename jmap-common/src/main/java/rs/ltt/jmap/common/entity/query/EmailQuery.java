@@ -14,8 +14,10 @@
  *
  */
 
-package rs.ltt.jmap.common.entity;
+package rs.ltt.jmap.common.entity.query;
 
+import rs.ltt.jmap.common.entity.Comparator;
+import rs.ltt.jmap.common.entity.Email;
 import rs.ltt.jmap.common.entity.filter.Filter;
 import rs.ltt.jmap.common.util.IndexableStringUtils;
 

@@ -20,6 +20,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ComparisonChain;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Singular;
+import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import rs.ltt.jmap.common.entity.Email;
 import rs.ltt.jmap.common.util.IndexableStringUtils;
 
@@ -58,7 +60,7 @@ public class EmailFilterCondition implements FilterCondition<Email> {
     }
 
     @Override
-    public int compareTo(Filter<Email> filter) {
+    public int compareTo(@NonNullDecl Filter<Email> filter) {
         if (filter instanceof EmailFilterCondition) {
             EmailFilterCondition other = (EmailFilterCondition) filter;
             return ComparisonChain.start()

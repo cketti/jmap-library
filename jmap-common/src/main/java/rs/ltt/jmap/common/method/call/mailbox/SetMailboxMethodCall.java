@@ -24,12 +24,25 @@ import java.util.Map;
 
 @JmapMethod("Mailbox/set")
 public class SetMailboxMethodCall extends SetMethodCall<Mailbox> {
+
+    private Boolean onDestroyRemoveEmails;
+
     public SetMailboxMethodCall(String accountId, String ifInState, Map<String, Mailbox> create, Map<String, Map<String, Object>> update, String[] destroy) {
         super(accountId, ifInState, create, update, destroy);
     }
 
+    public SetMailboxMethodCall(String accountId, String ifInState, Map<String, Mailbox> create, Map<String, Map<String, Object>> update, String[] destroy, Boolean onDestroyRemoveEmails) {
+        super(accountId, ifInState, create, update, destroy);
+        this.onDestroyRemoveEmails = onDestroyRemoveEmails;
+    }
+
     public SetMailboxMethodCall(String ifInState, String[] destroy) {
         super(ifInState, destroy);
+    }
+
+    public SetMailboxMethodCall(String ifInState, String[] destroy, Boolean onDestroyRemoveEmails) {
+        super(ifInState, destroy);
+        this.onDestroyRemoveEmails = onDestroyRemoveEmails;
     }
 
     public SetMailboxMethodCall(String ifInState, Map<String, Map<String, Object>> update) {
