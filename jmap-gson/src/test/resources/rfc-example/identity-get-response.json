@@ -1,0 +1,31 @@
+[ "Identity/get", {
+  "accountId": "acme",
+  "state": "99401312ae-11-333",
+  "list": [
+    {
+      "id": "XD-3301-222-11_22AAz",
+      "name": "Joe Bloggs",
+      "email": "joe@example.com",
+      "replyTo": null,
+      "bcc": [{
+        "name": null,
+        "email": "joe+archive@example.com"
+      }],
+      "textSignature": "-- \nJoe Bloggs\nMaster of Email",
+      "htmlSignature": "<div><b>Joe Bloggs</b></div>
+        <div>Master of Email</div>",
+      "mayDelete": false
+    },
+    {
+      "id": "XD-9911312-11_22AAz",
+      "name": "Joe B",
+      "email": "*@example.com",
+      "replyTo": null,
+      "bcc": null,
+      "textSignature": "",
+      "htmlSignature": "",
+      "mayDelete": true
+    }
+  ],
+  "notFound": []
+}, "0" ]

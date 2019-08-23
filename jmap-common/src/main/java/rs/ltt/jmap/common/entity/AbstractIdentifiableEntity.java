@@ -18,7 +18,7 @@ package rs.ltt.jmap.common.entity;
 
 import com.google.common.base.MoreObjects;
 
-public class AbstractIdentifiableEntity implements Identifiable {
+public abstract class AbstractIdentifiableEntity implements Identifiable {
 
     protected String id;
 
@@ -29,6 +29,7 @@ public class AbstractIdentifiableEntity implements Identifiable {
                 .toString();
     }
 
+    @Override
     public String getId() {
         return id;
     }

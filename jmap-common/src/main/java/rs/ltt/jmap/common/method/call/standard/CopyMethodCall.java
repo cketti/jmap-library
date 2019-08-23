@@ -21,7 +21,11 @@ import rs.ltt.jmap.common.method.MethodCall;
 
 import java.util.Map;
 
-public abstract class SetMethodCall<T extends AbstractIdentifiableEntity> implements MethodCall {
+public abstract class CopyMethodCall<T extends AbstractIdentifiableEntity> implements MethodCall {
+
+    private String fromAccountId;
+
+    private String ifFromInState;
 
     private String accountId;
 
@@ -29,30 +33,24 @@ public abstract class SetMethodCall<T extends AbstractIdentifiableEntity> implem
 
     private Map<String, T> create;
 
-    private Map<String, Map<String, Object>> update;
+    private Boolean onSuccessDestroyOriginal;
 
-    //TODO this would be a candidate for a result reference
-    private String[] destroy;
+    private String destroyFromIfInState;
 
-    public SetMethodCall(String accountId, String ifInState, Map<String, T> create, Map<String, Map<String, Object>> update, String[] destroy) {
+    protected CopyMethodCall(String fromAccountId, String accountId, Map<String, T> create) {
+        this.fromAccountId = fromAccountId;
+        this.accountId = accountId;
+        this.create = create;
+    }
+
+    protected CopyMethodCall(String fromAccountId, String ifFromInState, String accountId, String ifInState, Map<String, T> create, Boolean onSuccessDestroyOriginal, String destroyFromIfInState) {
+        this.fromAccountId = fromAccountId;
+        this.ifFromInState = ifFromInState;
         this.accountId = accountId;
         this.ifInState = ifInState;
         this.create = create;
-        this.update = update;
-        this.destroy = destroy;
+        this.onSuccessDestroyOriginal = onSuccessDestroyOriginal;
+        this.destroyFromIfInState = destroyFromIfInState;
     }
 
-    public SetMethodCall(String ifInState, String[] destroy) {
-        this.ifInState = ifInState;
-        this.destroy = destroy;
-    }
-
-    public SetMethodCall(String ifInState, Map<String, Map<String, Object>> update) {
-        this.ifInState = ifInState;
-        this.update = update;
-    }
-
-    public SetMethodCall(Map<String, T> create) {
-        this.create = create;
-    }
 }

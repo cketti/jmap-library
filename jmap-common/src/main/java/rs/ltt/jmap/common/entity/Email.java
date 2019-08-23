@@ -17,7 +17,6 @@
 package rs.ltt.jmap.common.entity;
 
 import com.google.common.base.MoreObjects;
-import com.google.gson.annotations.SerializedName;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
@@ -30,7 +29,7 @@ import java.util.Map;
 @Builder(toBuilder = true)
 public class Email extends AbstractIdentifiableEntity implements IdentifiableEmailWithKeywords, IdentifiableEmailWithMailboxIds {
 
-    public static final String[] MUTABLE_PROPERTIES = {"keywords","mailboxIds"};
+    public static final String[] MUTABLE_PROPERTIES = {"keywords", "mailboxIds"};
 
     //Metadata
 
@@ -42,7 +41,7 @@ public class Email extends AbstractIdentifiableEntity implements IdentifiableEma
     private Map<String, Boolean> mailboxIds;
 
     @Singular
-    private Map<String,Boolean> keywords;
+    private Map<String, Boolean> keywords;
 
     private Integer size;
 
@@ -90,7 +89,7 @@ public class Email extends AbstractIdentifiableEntity implements IdentifiableEma
     private List<EmailBodyPart> bodyStructure;
 
     @Singular
-    private Map<String,EmailBodyValue> bodyValues;
+    private Map<String, EmailBodyValue> bodyValues;
 
     @Singular("textBody")
     private List<EmailBodyPart> textBody;
@@ -104,6 +103,38 @@ public class Email extends AbstractIdentifiableEntity implements IdentifiableEma
     private Boolean hasAttachment;
 
     private String preview;
+
+    public static Email of(String id) {
+        final Email email = new Email(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        email.id = id;
+        return email;
+    }
 
     @Override
     public String toString() {

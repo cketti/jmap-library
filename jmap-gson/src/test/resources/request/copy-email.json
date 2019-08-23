@@ -1,0 +1,1 @@
+{"using":["urn:ietf:params:jmap:mail"],"methodCalls":[["Email/copy",{"fromAccountId":"from@domain.tld","accountId":"to@domain.tld","create":{"a":{"id":"M1001"}}},"0"]]}

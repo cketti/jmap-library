@@ -14,26 +14,12 @@
  *
  */
 
-package rs.ltt.jmap.common.entity;
+package rs.ltt.jmap.common.method.response.email;
 
-import com.google.common.base.MoreObjects;
-import lombok.Builder;
-import lombok.Getter;
+import rs.ltt.jmap.annotation.JmapMethod;
+import rs.ltt.jmap.common.entity.Email;
+import rs.ltt.jmap.common.method.response.standard.CopyMethodResponse;
 
-@Getter
-@Builder
-public class EmailBodyValue {
-
-    private String value;
-    private Boolean isEncodingProblem;
-    private Boolean isTruncated;
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("value", value)
-                .add("isEncodingProblem", isEncodingProblem)
-                .add("isTruncated", isTruncated)
-                .toString();
-    }
+@JmapMethod("Email/copy")
+public class CopyEmailMethodResponse extends CopyMethodResponse<Email> {
 }
