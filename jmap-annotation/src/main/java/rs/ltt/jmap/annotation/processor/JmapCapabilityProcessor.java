@@ -29,9 +29,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.FileObject;
-import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,36 +75,6 @@ public class JmapCapabilityProcessor extends AbstractProcessor {
         if (classes.size() == 0) {
             return true;
         }
-
-        /*try {
-            JavaFileObject javaFileObject = filer.createSourceFile(Utils.plural(INTERFACE.getName()));
-            PrintWriter printWriter = new PrintWriter(javaFileObject.openOutputStream());
-            printWriter.println(String.format("package %s;",INTERFACE.getPackage().getName()));
-            printWriter.println("import com.google.common.collect.BiMap;");
-            printWriter.println("import com.google.common.collect.ImmutableBiMap;");
-            printWriter.println(String.format("import %s;",INTERFACE.getName()));
-            printWriter.println(String.format("public class %s {", Utils.plural(INTERFACE.getSimpleName())));
-            printWriter.println(String.format("private static final BiMap<String,Class<?extends %s>> map;",INTERFACE.getSimpleName()));
-            printWriter.println("static {");
-            printWriter.print(String.format("map = new ImmutableBiMap.Builder<String,Class<?extends %s>>()",INTERFACE.getSimpleName()));
-            for(TypeElement typeElement : classes) {
-                JmapCapability annotation = typeElement.getAnnotation(JmapCapability.class);
-                printWriter.print(String.format(".put(\"%s\",%s.class)",annotation.namespace(),typeElement.getQualifiedName()));
-            }
-            printWriter.println(".build();");
-            printWriter.println("}");
-            printWriter.println(String.format("public static Class<? extends %s> find(String namespace) {",INTERFACE.getSimpleName()));
-            printWriter.println("return map.get(namespace);");
-            printWriter.println("}");
-            printWriter.println(String.format("public static String find(Class<?extends %s> clazz) {",INTERFACE.getSimpleName()));
-            printWriter.println("return map.inverse().get(clazz);");
-            printWriter.println("}");
-            printWriter.println("}");
-            printWriter.flush();
-            printWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
 
         try {
             FileObject resourceFile = filer.createResource(StandardLocation.CLASS_OUTPUT, "", Utils.getFilenameFor(INTERFACE));

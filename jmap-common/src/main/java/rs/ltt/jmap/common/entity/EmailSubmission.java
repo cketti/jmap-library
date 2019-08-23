@@ -36,7 +36,7 @@ public class EmailSubmission extends AbstractIdentifiableEntity {
     private UndoStatus undoStatus;
 
     @Singular("deliveryStatus")
-    private Map<String,DeliveryStatus> deliveryStatus;
+    private Map<String, DeliveryStatus> deliveryStatus;
 
     @Singular
     private List<String> dsnBlobIds;
