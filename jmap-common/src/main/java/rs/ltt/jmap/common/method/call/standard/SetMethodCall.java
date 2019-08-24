@@ -16,6 +16,8 @@
 
 package rs.ltt.jmap.common.method.call.standard;
 
+import com.google.gson.annotations.SerializedName;
+import rs.ltt.jmap.common.Request;
 import rs.ltt.jmap.common.entity.AbstractIdentifiableEntity;
 import rs.ltt.jmap.common.method.MethodCall;
 
@@ -31,8 +33,10 @@ public abstract class SetMethodCall<T extends AbstractIdentifiableEntity> implem
 
     private Map<String, Map<String, Object>> update;
 
-    //TODO this would be a candidate for a result reference
     private String[] destroy;
+
+    @SerializedName("#destroy")
+    private Request.Invocation.ResultReference destroyReference;
 
     public SetMethodCall(String accountId, String ifInState, Map<String, T> create, Map<String, Map<String, Object>> update, String[] destroy) {
         this.accountId = accountId;
@@ -45,6 +49,11 @@ public abstract class SetMethodCall<T extends AbstractIdentifiableEntity> implem
     public SetMethodCall(String ifInState, String[] destroy) {
         this.ifInState = ifInState;
         this.destroy = destroy;
+    }
+
+    public SetMethodCall(String ifInState, Request.Invocation.ResultReference destroy) {
+        this.ifInState = ifInState;
+        this.destroyReference = destroy;
     }
 
     public SetMethodCall(String ifInState, Map<String, Map<String, Object>> update) {

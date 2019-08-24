@@ -17,6 +17,7 @@
 package rs.ltt.jmap.common.method.call.email;
 
 import rs.ltt.jmap.annotation.JmapMethod;
+import rs.ltt.jmap.common.Request;
 import rs.ltt.jmap.common.entity.Email;
 import rs.ltt.jmap.common.method.call.standard.SetMethodCall;
 
@@ -32,6 +33,11 @@ public class SetEmailMethodCall extends SetMethodCall<Email> {
     public SetEmailMethodCall(String ifInState, String[] destroy) {
         super(ifInState, destroy);
     }
+
+    public SetEmailMethodCall(String ifInState, Request.Invocation.ResultReference destroy) {
+        super(ifInState, destroy);
+    }
+
 
     public SetEmailMethodCall(String ifInState, Map<String, Map<String, Object>> update) {
         super(ifInState, update);

@@ -127,7 +127,7 @@ public class Main {
                                 redrawCurrentList(screen);
                             }
                             try {
-                                Thread.sleep(1000);
+                                Thread.sleep(5000);
                             } catch (InterruptedException e) {
                                 //goodbye
                             }
@@ -194,6 +194,9 @@ public class Main {
                 }
                 if (keyStroke.getKeyType() == KeyType.Enter) {
                     send(mua);
+                }
+                if (keyStroke.getKeyType() == KeyType.Character && keyStroke.getCharacter() == 'T') {
+                    emptyTrash(mua);
                 }
 
             }
@@ -363,6 +366,14 @@ public class Main {
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void emptyTrash(Mua mua) {
+        try {
+            mua.emptyTrash().get();
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
     }

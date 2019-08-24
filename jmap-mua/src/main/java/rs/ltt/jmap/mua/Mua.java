@@ -33,6 +33,7 @@ import rs.ltt.jmap.client.session.SessionFileCache;
 import rs.ltt.jmap.common.Request;
 import rs.ltt.jmap.common.entity.Thread;
 import rs.ltt.jmap.common.entity.*;
+import rs.ltt.jmap.common.entity.filter.EmailFilterCondition;
 import rs.ltt.jmap.common.entity.filter.Filter;
 import rs.ltt.jmap.common.entity.query.EmailQuery;
 import rs.ltt.jmap.common.method.call.email.GetEmailMethodCall;
@@ -911,6 +912,41 @@ public class Mua {
         }, MoreExecutors.directExecutor());
     }
 
+    public ListenableFuture<Boolean> emptyTrash() {
+        return Futures.transformAsync(getMailboxes(), new AsyncFunction<Collection<? extends IdentifiableMailboxWithRole>, Boolean>() {
+            @Override
+            public ListenableFuture<Boolean> apply(@NullableDecl Collection<? extends IdentifiableMailboxWithRole> mailboxes) {
+                Preconditions.checkNotNull(mailboxes, "SpecialMailboxes collection must not be null but can be empty");
+                final IdentifiableMailboxWithRole trash = MailboxUtil.find(mailboxes, Role.TRASH);
+                if (trash == null) {
+                    return Futures.immediateFailedFuture(new IllegalStateException("No mailbox with trash role"));
+                }
+                return emptyTrash(trash);
+            }
+        }, MoreExecutors.directExecutor());
+
+    }
+
+    public ListenableFuture<Boolean> emptyTrash(@NonNullDecl IdentifiableMailboxWithRole trash) {
+        final JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
+        final EmailFilterCondition filter = EmailFilterCondition.builder().inMailbox(trash.getId()).build();
+        final Request.Invocation queryInvocation = Request.Invocation.create(new QueryEmailMethodCall(filter));
+        ListenableFuture<MethodResponses> queryFuture = multiCall.add(queryInvocation);
+        final Request.Invocation setInvocation = Request.Invocation.create(new SetEmailMethodCall(null, queryInvocation.createReference(Request.Invocation.ResultReference.Path.IDS)));
+        final ListenableFuture<MethodResponses> setFuture = multiCall.add(setInvocation);
+        multiCall.execute();
+        return Futures.transformAsync(setFuture, new AsyncFunction<MethodResponses, Boolean>() {
+            @Override
+            public ListenableFuture<Boolean> apply(@NullableDecl MethodResponses methodResponses) throws Exception {
+                SetEmailMethodResponse setEmailMethodResponse = setFuture.get().getMain(SetEmailMethodResponse.class);
+                SetEmailException.throwIfFailed(setEmailMethodResponse);
+                final String[] destroyed = setEmailMethodResponse.getDestroyed();
+                LOGGER.info(String.format("Deleted %d emails", destroyed == null ? 0 : destroyed.length));
+                return Futures.immediateFuture(true);
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
     public ListenableFuture<Status> refresh() {
         return Futures.transformAsync(getObjectsState(), new AsyncFunction<ObjectsState, Status>() {
             @Override
@@ -1036,7 +1072,7 @@ public class Mua {
         Preconditions.checkNotNull(queryStateWrapper, "QueryStateWrapper can not be null when paging");
 
 
-        //TODO: this currently means we can’t page in queries that aren’t cacheble (=don’t have a queryState)
+        //TODO: this currently means we can’t page in queries that aren’t cacheable (=don’t have a queryState)
         //TODO: we should probably get rid of that check and instead simply don’t do the update call
         //TODO: likewise we probably need to be able to ignore a canNotCalculate Changes error on the update response
         if (queryStateWrapper.queryState == null) {
@@ -1207,7 +1243,7 @@ public class Mua {
                         settableFuture.set(Status.UPDATED);
                     } else {
                         List<ListenableFuture<Status>> list = new ArrayList<>();
-                        list.add(Futures.immediateFuture(Status.UPDATED));
+                        list.add(Futures.immediateFuture(Status.UPDATED)); //TODO maybe not updated when empty result?
                         list.add(fetchMissing(query.toQueryString()));
                         settableFuture.setFuture(transform(list));
                     }
