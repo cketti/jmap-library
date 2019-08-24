@@ -18,6 +18,7 @@ package rs.ltt.jmap.common.method.call.mailbox;
 
 import rs.ltt.jmap.annotation.JmapMethod;
 import rs.ltt.jmap.common.entity.Mailbox;
+import rs.ltt.jmap.common.entity.filter.Filter;
 import rs.ltt.jmap.common.entity.query.MailboxQuery;
 import rs.ltt.jmap.common.method.call.standard.QueryMethodCall;
 
@@ -27,6 +28,10 @@ public class QueryMailboxMethodCall extends QueryMethodCall<Mailbox> {
     private Boolean sortAsTree;
 
     private Boolean filterAsTree;
+
+    public QueryMailboxMethodCall(Filter<Mailbox> filter) {
+        super(filter);
+    }
 
     public QueryMailboxMethodCall(MailboxQuery query) {
         super(query);
