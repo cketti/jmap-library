@@ -1051,22 +1051,22 @@ public class Mua {
         }, MoreExecutors.directExecutor());
     }
 
-    public ListenableFuture<Boolean> query(@NonNullDecl final EmailQuery query, final String afterEmailId) {
+    public ListenableFuture<Status> query(@NonNullDecl final EmailQuery query, final String afterEmailId) {
         final ListenableFuture<QueryStateWrapper> queryStateFuture = ioExecutorService.submit(new Callable<QueryStateWrapper>() {
             @Override
             public QueryStateWrapper call() throws Exception {
                 return cache.getQueryState(query.toQueryString());
             }
         });
-        return Futures.transformAsync(queryStateFuture, new AsyncFunction<QueryStateWrapper, Boolean>() {
+        return Futures.transformAsync(queryStateFuture, new AsyncFunction<QueryStateWrapper, Status>() {
             @Override
-            public ListenableFuture<Boolean> apply(@NullableDecl QueryStateWrapper queryStateWrapper) {
+            public ListenableFuture<Status> apply(@NullableDecl QueryStateWrapper queryStateWrapper) {
                 return query(query, afterEmailId, queryStateWrapper);
             }
         }, MoreExecutors.directExecutor());
     }
 
-    private ListenableFuture<Boolean> query(@NonNullDecl final EmailQuery query, @NonNullDecl final String afterEmailId, final QueryStateWrapper queryStateWrapper) {
+    private ListenableFuture<Status> query(@NonNullDecl final EmailQuery query, @NonNullDecl final String afterEmailId, final QueryStateWrapper queryStateWrapper) {
         Preconditions.checkNotNull(query, "Query can not be null");
         Preconditions.checkNotNull(afterEmailId, "afterEmailId can not be null");
         Preconditions.checkNotNull(queryStateWrapper, "QueryStateWrapper can not be null when paging");
@@ -1081,7 +1081,7 @@ public class Mua {
         if (!afterEmailId.equals(queryStateWrapper.upTo)) {
             throw new InconsistentQueryStateException("upToId from QueryState needs to match the supplied afterEmailId");
         }
-        final SettableFuture<Boolean> settableFuture = SettableFuture.create();
+        final SettableFuture<Status> settableFuture = SettableFuture.create();
         JmapClient.MultiCall multiCall = jmapClient.newMultiCall();
         final ListenableFuture<Status> queryRefreshFuture = refreshQuery(query, queryStateWrapper, multiCall);
 
@@ -1112,7 +1112,7 @@ public class Mua {
                     fetchMissing(query.toQueryString()).addListener(new Runnable() {
                         @Override
                         public void run() {
-                            settableFuture.set(queryResult.items.length > 0);
+                            settableFuture.set(queryResult.items.length > 0 ? Status.UPDATED : Status.UNCHANGED);
                         }
                     }, MoreExecutors.directExecutor());
                 } catch (Exception e) {
@@ -1237,13 +1237,19 @@ public class Mua {
                         throw new IllegalStateException("Server reported position " + queryResult.position + " in response to initial query. We expected 0");
                     }
 
+                    if (queryResult.items.length == 0) {
+                        settableFuture.set(Status.UNCHANGED);
+                        LOGGER.info("initial query yielded empty result");
+                        return;
+                    }
+
                     cache.setQueryResult(query.toQueryString(), queryResult);
 
                     if (getThreadsResponsesFuture != null && getEmailResponsesFuture != null) {
                         settableFuture.set(Status.UPDATED);
                     } else {
                         List<ListenableFuture<Status>> list = new ArrayList<>();
-                        list.add(Futures.immediateFuture(Status.UPDATED)); //TODO maybe not updated when empty result?
+                        list.add(Futures.immediateFuture(Status.UPDATED));
                         list.add(fetchMissing(query.toQueryString()));
                         settableFuture.setFuture(transform(list));
                     }

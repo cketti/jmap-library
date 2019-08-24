@@ -20,6 +20,7 @@ package rs.ltt.jmap.mua.util;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import rs.ltt.jmap.common.entity.AddedItem;
 import rs.ltt.jmap.common.entity.Email;
 import rs.ltt.jmap.common.entity.TypedState;
@@ -36,7 +37,7 @@ public class QueryResult {
     public final TypedState<Email> queryState;
     public final TypedState<Email> objectState;
 
-    private QueryResult(QueryResultItem[] items, int position, TypedState<Email> queryState, TypedState<Email> objectState) {
+    private QueryResult(@NonNullDecl QueryResultItem[] items, int position, TypedState<Email> queryState, TypedState<Email> objectState) {
         this.items = items;
         this.position = position;
         this.queryState = queryState;

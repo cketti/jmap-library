@@ -226,8 +226,8 @@ public class Main {
             if (cursorPosition == items.size() -1) {
                 QueryViewItem last = Iterables.getLast(items, null);
                 try {
-                    Boolean newEntries = mua.query(currentQuery, last.mostRecent.getId()).get();
-                    if (newEntries) {
+                    Status status = mua.query(currentQuery, last.mostRecent.getId()).get();
+                    if (status == Status.UPDATED) {
                         items = myInMemoryCache.getQueryViewItems(currentQuery.toQueryString());
                         redrawCurrentList(screen);
                     }
